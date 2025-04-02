@@ -1,0 +1,76 @@
+{
+  "project_info": {
+    "project_number": "1007565822434",
+    "project_id": "guerrerobarberapp",
+    "storage_bucket": "guerrerobarberapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007565822434:android:4baf68b9577b57bb4541bb",
+        "android_client_info": {
+          "package_name": "com.company.guerrerobarberapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1007565822434-kq915ritsl6lh1ufl74acdmramkgag30.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.company.guerrerobarberapp",
+            "certificate_hash": "f4774aafe1559591aeb6be3ff42b5f271c571dc3"
+          }
+        },
+        {
+          "client_id": "1007565822434-nq4am8rhsvp0athd0g0rudlqmnpe3coa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgYIPD74JV1ajP9fL7Wa1QtP8w9Tfm1f4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1007565822434-nq4am8rhsvp0athd0g0rudlqmnpe3coa.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007565822434:android:b6f70546f3a272764541bb",
+        "android_client_info": {
+          "package_name": "com.example.guerrero_barber_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1007565822434-nq4am8rhsvp0athd0g0rudlqmnpe3coa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgYIPD74JV1ajP9fL7Wa1QtP8w9Tfm1f4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1007565822434-nq4am8rhsvp0athd0g0rudlqmnpe3coa.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

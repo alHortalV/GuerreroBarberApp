@@ -192,7 +192,7 @@ class _AuthScreenState extends State<AuthScreen>
                 const SizedBox(height: 40),
                 Container(
                   margin: const EdgeInsets.only(bottom: 20),
-                  child: Icon(
+                  child: const Icon(
                     Icons.content_cut,
                     size: 80,
                     color: Colors.cyan,
@@ -213,6 +213,7 @@ class _AuthScreenState extends State<AuthScreen>
                         },
                         child: !isLogin
                             ? TextFormField(
+                                cursorColor: Colors.grey,
                                 key: const ValueKey('username'),
                                 style: TextStyle(color: Colors.grey[800]),
                                 decoration: InputDecoration(
@@ -249,6 +250,7 @@ class _AuthScreenState extends State<AuthScreen>
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
+                        cursorColor: Colors.grey,
                         style: TextStyle(color: Colors.grey[800]),
                         key: const ValueKey('email'),
                         keyboardType: TextInputType.emailAddress,
@@ -284,6 +286,7 @@ class _AuthScreenState extends State<AuthScreen>
                       ),
                       const SizedBox(height: 16),
                       TextFormField(
+                        cursorColor: Colors.grey,
                         style: const TextStyle(color: Colors.white),
                         key: const ValueKey('password'),
                         obscureText: _obscurePassword,
@@ -345,7 +348,7 @@ class _AuthScreenState extends State<AuthScreen>
                           isLogin
                               ? '¿No tienes cuenta? Regístrate'
                               : 'Ya tengo cuenta',
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.cyan,
                             fontSize: 16,
                           ),

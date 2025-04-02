@@ -26,7 +26,6 @@ class _AuthScreenState extends State<AuthScreen>
   bool _obscureConfirmPassword = true;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
-  late Animation<Offset> _titleSlideAnimation;
 
   @override
   void initState() {
@@ -43,7 +42,7 @@ class _AuthScreenState extends State<AuthScreen>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
-    _titleSlideAnimation = Tween<Offset>(
+    Tween<Offset>(
       // Initialize _titleSlideAnimation
       begin: Offset.zero,
       end: const Offset(1.0, 0.0), // Initial end, will be adjusted in build
@@ -228,7 +227,7 @@ class _AuthScreenState extends State<AuthScreen>
           direction: ScrollDirection.bottom2Top,
           shape: ScrollerShape.stripesDiagonalBackward,
           backgroundColor: Colors.white,
-          color: Colors.red,
+          color: Colors.redAccent,
           shapeWidth: 100.0,
           spaceBetweenShapes: 100.0,
           shapeOffset: ScrollerShapeOffset.shiftAndMesh,
@@ -468,7 +467,7 @@ class _AuthScreenState extends State<AuthScreen>
                       const SizedBox(height: 24),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.redAccent,
+                          backgroundColor: Colors.red,
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),

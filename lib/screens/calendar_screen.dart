@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../models/appointment.dart';
@@ -41,42 +40,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     });
   }
 
-  // Valida si el horario ya está reservado (comparando fecha y hora)
-  bool _isSlotAvailable(DateTime dateTime) {
-    for (final appt in _appointments) {
-      if (appt.dateTime == dateTime) return false;
-    }
-    return true;
-  }
-
-  void _bookAppointment(DateTime dateTime) async {
-    if (!_isSlotAvailable(dateTime)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('El horario ya está reservado.')));
-      return;
-    }
-
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    final newAppointmentRef =
-        FirestoreService.firestore.collection('appointments').doc();
-    final newAppointment = Appointment(
-      id: newAppointmentRef.id,
-      userId: user.uid,
-      dateTime: dateTime,
-      service: "Corte",
-      notes: '',
-    );
-
-    await newAppointmentRef.set(newAppointment.toMap());
-
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('Cita reservada exitosamente.')));
-
-    _loadAppointments();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,6 +66,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 _calendarFormat = format;
               });
             },
+            locale: 'es_ES',
+            startingDayOfWeek: StartingDayOfWeek.monday,
+            headerStyle: HeaderStyle(
+              formatButtonVisible: false,
+              titleCentered: true,
+              leftChevronIcon: const Icon(Icons.chevron_left),
+              rightChevronIcon: const Icon(Icons.chevron_right),
+            ),
+            daysOfWeekStyle: DaysOfWeekStyle(
+              weekdayStyle: TextStyle(color: Colors.black),
+              weekendStyle: TextStyle(color: Colors.red),
+            ),
           ),
           SizedBox(height: 16),
           Expanded(
@@ -117,18 +92,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
               },
             ),
           ),
-          // Ejemplo: reserva una cita fija a las 10:00 AM del día seleccionado.
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              child: Text('Reservar cita a las 10:00'),
-              onPressed: () {
-                final appointmentTime = DateTime(_selectedDay.year,
-                    _selectedDay.month, _selectedDay.day, 10, 0);
-                _bookAppointment(appointmentTime);
-              },
-            ),
-          )
         ],
       ),
     );

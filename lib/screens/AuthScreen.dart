@@ -252,7 +252,7 @@ class _AuthScreenState extends State<AuthScreen>
                     style: const TextStyle(
                       fontSize: 50,
                       fontWeight: FontWeight.bold,
-                      color: Colors.cyan,
+                      color: Color.fromARGB(255, 37, 83, 105),
                     ),
                   ),
                 ),
@@ -262,7 +262,7 @@ class _AuthScreenState extends State<AuthScreen>
                   child: const Icon(
                     Icons.content_cut,
                     size: 80,
-                    color: Colors.cyan,
+                    color: Color.fromARGB(255, 37, 83, 105),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -488,8 +488,9 @@ class _AuthScreenState extends State<AuthScreen>
                               ? '¿No tienes cuenta? Regístrate'
                               : 'Ya tengo cuenta',
                           style: const TextStyle(
-                            color: Colors.cyan,
+                            color: Color.fromARGB(255, 37, 83, 105),
                             fontSize: 16,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),

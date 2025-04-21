@@ -18,6 +18,7 @@ class _AuthScreenState extends State<AuthScreen>
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
   late bool isLogin;
+  bool isForgotPassword = false;
   String username = '';
   String email = '';
   String password = '';
@@ -82,29 +83,44 @@ class _AuthScreenState extends State<AuthScreen>
     // Primero se guardan los valores de los campos
     _formKey.currentState?.save();
 
-    // Validar email
+    // Validar email (siempre necesario)
     if (email.isEmpty || !email.contains('@') || !email.contains('.')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Ingresa un correo válido')),
       );
       return;
     }
-
     final atIndex = email.indexOf('@');
     final dotIndex = email.lastIndexOf('.');
-
-    if (atIndex < 1 || // No hay contenido antes de "@"
-            atIndex == email.length - 1 || // No hay contenido después de "@"
-            dotIndex <= atIndex + 1 || // No hay contenido entre "@" y "."
-            dotIndex == email.length - 1 // No hay contenido después de "."
-        ) {
+    if (atIndex < 1 ||
+        atIndex == email.length - 1 ||
+        dotIndex <= atIndex + 1 ||
+        dotIndex == email.length - 1) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Ingresa un correo electrónico válido')),
       );
       return;
     }
 
-    // Validar username para el registro
+    // Si está en modo “Reestablecer contraseña” solo se necesita el correo
+    if (isForgotPassword) {
+      try {
+        await _auth.sendPasswordResetEmail(email: email);
+        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
+          const SnackBar(
+              content: Text('Se ha enviado el enlace de reinicio a tu correo')),
+        );
+        setState(() {
+          isForgotPassword = false;
+        });
+      } catch (e) {
+        ScaffoldMessenger.of(mounted ? context : context)
+            .showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      }
+      return;
+    }
+
+    // Validar username para registro
     if (!isLogin && username.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Ingresa un nombre de usuario')),
@@ -206,13 +222,22 @@ class _AuthScreenState extends State<AuthScreen>
   }
 
   void _toggleAuthMode() {
-    if (isLogin) {
-      _animationController.forward();
-    } else {
-      _animationController.reverse();
+    if (!isForgotPassword) {
+      if (isLogin) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+      setState(() {
+        isLogin = !isLogin;
+      });
     }
+  }
+
+  void _toggleForgotPassword() {
+    // Si se activa, mostramos solo el campo de correo y cambiamos títulos y botón
     setState(() {
-      isLogin = !isLogin;
+      isForgotPassword = !isForgotPassword;
     });
   }
 
@@ -220,9 +245,7 @@ class _AuthScreenState extends State<AuthScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: DynamicBg(
-        duration: const Duration(
-            seconds:
-                45), // Puedes ajustar la duración para cambiar la velocidad
+        duration: const Duration(seconds: 45),
         painterData: ScrollerPainterData(
           direction: ScrollDirection.bottom2Top,
           shape: ScrollerShape.stripesDiagonalBackward,
@@ -239,20 +262,24 @@ class _AuthScreenState extends State<AuthScreen>
               children: [
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 300),
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    );
-                  },
-                  child: Text(
-                    isLogin ? 'Iniciar Sesión' : 'Registro',
-                    key: ValueKey<bool>(
-                        isLogin), // Important for AnimatedSwitcher
-                    style: const TextStyle(
-                      fontSize: 50,
-                      fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 37, 83, 105),
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  ),
+                  child: Center(
+                    key: ValueKey<String>(isForgotPassword
+                        ? 'forgotTitle'
+                        : (isLogin ? 'loginTitle' : 'registerTitle')),
+                    child: Text(
+                      isForgotPassword
+                          ? 'Reestablecer Contraseña'
+                          : (isLogin ? 'Iniciar Sesión' : 'Registro'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 50,
+                        fontWeight: FontWeight.bold,
+                        color: Color.fromARGB(255, 37, 83, 105),
+                      ),
                     ),
                   ),
                 ),
@@ -270,200 +297,254 @@ class _AuthScreenState extends State<AuthScreen>
                   key: _formKey,
                   child: Column(
                     children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) {
-                          return SlideTransition(
-                            position: _slideAnimation,
-                            child: child,
-                          );
-                        },
-                        child: !isLogin
-                            ? TextFormField(
-                                cursorColor: Colors.grey,
-                                key: const ValueKey('username'),
-                                style: TextStyle(color: Colors.grey[800]),
-                                decoration: InputDecoration(
-                                  labelText: 'Nombre de usuario',
-                                  labelStyle:
-                                      TextStyle(color: Colors.grey[800]),
-                                  filled: true,
-                                  fillColor: Colors.white70,
-                                  prefixIcon: Icon(
-                                    Icons.person,
-                                    color: Colors.grey[800],
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderSide: BorderSide(color: Colors.grey),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide:
-                                        const BorderSide(color: Colors.grey),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                ),
-                                validator: (value) {
-                                  if (value == null || value.trim().isEmpty) {
-                                    return 'Ingresa un nombre de usuario';
-                                  }
-                                  return null;
-                                },
-                                onSaved: (value) {
-                                  username = value!.trim();
-                                },
-                              )
-                            : const SizedBox.shrink(),
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        cursorColor: Colors.grey,
-                        style: TextStyle(color: Colors.grey[800]),
-                        key: const ValueKey('email'),
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: InputDecoration(
-                          labelText: 'Correo Electrónico',
-                          labelStyle: TextStyle(color: Colors.grey[800]),
-                          filled: true,
-                          fillColor: Colors.white70,
-                          prefixIcon: Icon(
-                            Icons.email,
-                            color: Colors.grey[800],
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null ||
-                              !value.contains('@') ||
-                              !value.contains('.')) {
-                            return 'Ingresa un correo válido';
-                          }
-                          final atIndex = value.indexOf('@');
-                          final dotIndex = value.lastIndexOf('.');
-                          if (atIndex < 1 ||
-                              atIndex == value.length - 1 ||
-                              dotIndex <= atIndex + 1 ||
-                              dotIndex == value.length - 1) {
-                            return 'Ingresa un correo electrónico válido';
-                          }
-                          return null;
-                        },
-                        onSaved: (value) {
-                          email = value!;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        cursorColor: Colors.grey,
-                        style: TextStyle(color: Colors.grey[800]),
-                        key: const ValueKey('password'),
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Contraseña',
-                          labelStyle: TextStyle(color: Colors.grey[800]),
-                          filled: true,
-                          fillColor: Colors.white70,
-                          prefixIcon: Icon(
-                            Icons.lock,
-                            color: Colors.grey[800],
-                          ),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
+                      // En modo Reestablecer contraseña solo se muestra el correo
+                      if (isForgotPassword)
+                        TextFormField(
+                          cursorColor: Colors.grey,
+                          style: TextStyle(color: Colors.grey[800]),
+                          key: const ValueKey('email'),
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'Correo Electrónico',
+                            labelStyle: TextStyle(color: Colors.grey[800]),
+                            filled: true,
+                            fillColor: Colors.white70,
+                            prefixIcon: Icon(
+                              Icons.email,
                               color: Colors.grey[800],
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Colors.grey),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          validator: (value) {
+                            if (value == null ||
+                                !value.contains('@') ||
+                                !value.contains('.')) {
+                              return 'Ingresa un correo válido';
+                            }
+                            final atIndex = value.indexOf('@');
+                            final dotIndex = value.lastIndexOf('.');
+                            if (atIndex < 1 ||
+                                atIndex == value.length - 1 ||
+                                dotIndex <= atIndex + 1 ||
+                                dotIndex == value.length - 1) {
+                              return 'Ingresa un correo electrónico válido';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            email = value!;
+                          },
+                        )
+                      else ...[
+                        // Muestra el campo de nombre si no es inicio de sesión (registro)
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) {
+                            return SlideTransition(
+                              position: _slideAnimation,
+                              child: child,
+                            );
+                          },
+                          child: !isLogin
+                              ? TextFormField(
+                                  key: const ValueKey('username'),
+                                  cursorColor: Colors.grey,
+                                  style: TextStyle(color: Colors.grey[800]),
+                                  decoration: InputDecoration(
+                                    labelText: 'Nombre de usuario',
+                                    labelStyle:
+                                        TextStyle(color: Colors.grey[800]),
+                                    filled: true,
+                                    fillColor: Colors.white70,
+                                    prefixIcon: Icon(
+                                      Icons.person,
+                                      color: Colors.grey[800],
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide:
+                                          BorderSide(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderSide:
+                                          const BorderSide(color: Colors.grey),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.trim().isEmpty) {
+                                      return 'Ingresa un nombre de usuario';
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (value) {
+                                    username = value!.trim();
+                                  },
+                                )
+                              : const SizedBox.shrink(),
                         ),
-                        onSaved: (value) {
-                          password = value!;
-                        },
-                        validator: isLogin
-                            ? _validateLoginPassword
-                            : _validateRegisterPassword,
-                      ),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        transitionBuilder: (child, animation) {
-                          return SlideTransition(
-                            position: _slideAnimation,
-                            child: child,
-                          );
-                        },
-                        child: !isLogin
-                            ? Column(
-                                children: [
-                                  const SizedBox(height: 16),
-                                  TextFormField(
-                                    cursorColor: Colors.grey,
-                                    style: TextStyle(color: Colors.grey[800]),
-                                    key: const ValueKey('confirmPassword'),
-                                    obscureText: _obscureConfirmPassword,
-                                    decoration: InputDecoration(
-                                      labelText: 'Confirmar Contraseña',
-                                      labelStyle:
-                                          TextStyle(color: Colors.grey[800]),
-                                      filled: true,
-                                      fillColor: Colors.white70,
-                                      prefixIcon: Icon(
-                                        Icons.lock,
-                                        color: Colors.grey[800],
-                                      ),
-                                      suffixIcon: IconButton(
-                                        icon: Icon(
-                                          _obscureConfirmPassword
-                                              ? Icons.visibility_off
-                                              : Icons.visibility,
+                        const SizedBox(height: 16),
+                        // Campo correo
+                        TextFormField(
+                          cursorColor: Colors.grey,
+                          style: TextStyle(color: Colors.grey[800]),
+                          key: const ValueKey('email'),
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'Correo Electrónico',
+                            labelStyle: TextStyle(color: Colors.grey[800]),
+                            filled: true,
+                            fillColor: Colors.white70,
+                            prefixIcon: Icon(
+                              Icons.email,
+                              color: Colors.grey[800],
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null ||
+                                !value.contains('@') ||
+                                !value.contains('.')) {
+                              return 'Ingresa un correo válido';
+                            }
+                            final atIndex = value.indexOf('@');
+                            final dotIndex = value.lastIndexOf('.');
+                            if (atIndex < 1 ||
+                                atIndex == value.length - 1 ||
+                                dotIndex <= atIndex + 1 ||
+                                dotIndex == value.length - 1) {
+                              return 'Ingresa un correo electrónico válido';
+                            }
+                            return null;
+                          },
+                          onSaved: (value) {
+                            email = value!;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        // Campo contraseña
+                        TextFormField(
+                          cursorColor: Colors.grey,
+                          style: TextStyle(color: Colors.grey[800]),
+                          key: const ValueKey('password'),
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Contraseña',
+                            labelStyle: TextStyle(color: Colors.grey[800]),
+                            filled: true,
+                            fillColor: Colors.white70,
+                            prefixIcon: Icon(
+                              Icons.lock,
+                              color: Colors.grey[800],
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: Colors.grey[800],
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: const BorderSide(color: Colors.grey),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onSaved: (value) {
+                            password = value!;
+                          },
+                          validator: isLogin
+                              ? _validateLoginPassword
+                              : _validateRegisterPassword,
+                        ),
+                        // Solo en Registro se muestra el campo de confirmar contraseña
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (child, animation) {
+                            return SlideTransition(
+                              position: _slideAnimation,
+                              child: child,
+                            );
+                          },
+                          child: !isLogin
+                              ? Column(
+                                  children: [
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                      cursorColor: Colors.grey,
+                                      style: TextStyle(color: Colors.grey[800]),
+                                      key: const ValueKey('confirmPassword'),
+                                      obscureText: _obscureConfirmPassword,
+                                      decoration: InputDecoration(
+                                        labelText: 'Confirmar Contraseña',
+                                        labelStyle:
+                                            TextStyle(color: Colors.grey[800]),
+                                        filled: true,
+                                        fillColor: Colors.white70,
+                                        prefixIcon: Icon(
+                                          Icons.lock,
                                           color: Colors.grey[800],
                                         ),
-                                        onPressed: () {
-                                          setState(() {
-                                            _obscureConfirmPassword =
-                                                !_obscureConfirmPassword;
-                                          });
-                                        },
+                                        suffixIcon: IconButton(
+                                          icon: Icon(
+                                            _obscureConfirmPassword
+                                                ? Icons.visibility_off
+                                                : Icons.visibility,
+                                            color: Colors.grey[800],
+                                          ),
+                                          onPressed: () {
+                                            setState(() {
+                                              _obscureConfirmPassword =
+                                                  !_obscureConfirmPassword;
+                                            });
+                                          },
+                                        ),
+                                        enabledBorder: OutlineInputBorder(
+                                          borderSide:
+                                              BorderSide(color: Colors.grey),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide: const BorderSide(
+                                              color: Colors.grey),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
                                       ),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide:
-                                            BorderSide(color: Colors.grey),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: const BorderSide(
-                                            color: Colors.grey),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
+                                      validator: _validateConfirmPassword,
+                                      onSaved: (value) {
+                                        confirmPassword = value!;
+                                      },
                                     ),
-                                    validator: _validateConfirmPassword,
-                                    onSaved: (value) {
-                                      confirmPassword = value!;
-                                    },
-                                  ),
-                                ],
-                              )
-                            : const SizedBox.shrink(),
-                      ),
+                                  ],
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
                       const SizedBox(height: 24),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
@@ -475,25 +556,54 @@ class _AuthScreenState extends State<AuthScreen>
                         ),
                         onPressed: _submit,
                         child: Text(
-                          isLogin ? 'Iniciar Sesión' : 'Registrarse',
+                          isForgotPassword
+                              ? 'Enviar enlace'
+                              : (isLogin ? 'Iniciar Sesión' : 'Registrarse'),
                           style: const TextStyle(
                               fontSize: 18, color: Colors.white),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: _toggleAuthMode,
-                        child: Text(
-                          isLogin
-                              ? '¿No tienes cuenta? Regístrate'
-                              : 'Ya tengo cuenta',
-                          style: const TextStyle(
-                            color: Color.fromARGB(255, 37, 83, 105),
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                      // Botones para cambiar de modo:
+                      if (isForgotPassword)
+                        TextButton(
+                          onPressed: _toggleForgotPassword,
+                          child: const Text(
+                            'Volver',
+                            style: TextStyle(
+                              color: Color.fromARGB(255, 37, 83, 105),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
+                      else ...[
+                        TextButton(
+                          onPressed: _toggleAuthMode,
+                          child: Text(
+                            isLogin
+                                ? '¿No tienes cuenta? Regístrate'
+                                : 'Ya tengo cuenta',
+                            style: const TextStyle(
+                              color: Color.fromARGB(255, 37, 83, 105),
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
+                        if (isLogin)
+                          TextButton(
+                            onPressed: _toggleForgotPassword,
+                            child: const Text(
+                              'Se me olvidó la contraseña',
+                              style: TextStyle(
+                                color: Color.fromARGB(255, 37, 83, 105),
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                      ]
                     ],
                   ),
                 ),

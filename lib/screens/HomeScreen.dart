@@ -93,16 +93,25 @@ class AppointmentsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final userEmail = user?.email;
+    if (userEmail == null) {
+      return const Center(child: Text("No autorizado."));
+    }
     return Container(
       padding: const EdgeInsets.all(16),
       child: FutureBuilder<QuerySnapshot>(
-        future: FirebaseFirestore.instance.collection("appointments").get(),
+        future: FirebaseFirestore.instance
+            .collection("appointments")
+            .where('userEmail', isEqualTo: userEmail)
+            .where('dateTime', isGreaterThanOrEqualTo: DateTime.now().toIso8601String())
+            .orderBy('dateTime')
+            .get(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(
-                child: CircularProgressIndicator(
-              color: Colors.blue,
-            ));
+              child: CircularProgressIndicator(color: Colors.blue),
+            );
           }
           final docs = snapshot.data!.docs;
           if (docs.isEmpty) {
@@ -120,25 +129,61 @@ class AppointmentsList extends StatelessWidget {
               final data = docs[index].data() as Map<String, dynamic>;
               final dateTime = DateTime.parse(data["dateTime"]);
               final formattedDate = DateFormat('EEEE, d MMMM', 'es_ES').format(dateTime);
-              return Card(
-                elevation: 2,
-                child: ListTile(
-                  leading: const Icon(Icons.event, color: Colors.blue),
-                  title: Text(
-                    "${data["service"]}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+              return Dismissible(
+                key: Key(data['id']),
+                direction: DismissDirection.endToStart,
+                // Fondo con iconos dentro del card
+                background: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    color: Colors.redAccent,
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 16),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Icon(Icons.arrow_back, color: Colors.white),
+                        SizedBox(width: 8),
+                        Icon(Icons.delete, color: Colors.white),
+                      ],
+                    ),
                   ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        formattedDate,
-                        style: const TextStyle(fontSize: 16),
+                ),
+                onDismissed: (direction) async {
+                  await FirebaseFirestore.instance
+                      .collection("appointments")
+                      .doc(data['id'])
+                      .delete();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Cita eliminada')),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
+                    elevation: 2,
+                    child: ListTile(
+                      leading: const Icon(Icons.event, color: Colors.blue),
+                      trailing: const Icon(Icons.delete, color: Colors.redAccent),
+                      title: Text(
+                        "${data["service"]}",
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      Text(
-                        "A las ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}",
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            formattedDate,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            "A las ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}",
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               );
@@ -176,15 +221,29 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
 
   Future<void> _selectDate(BuildContext context) async {
     final now = DateTime.now();
-    final initialDate = selectedDate ?? now;
+    DateTime adjustedInitialDate;
+    if (selectedDate != null) {
+      adjustedInitialDate = selectedDate!;
+    } else {
+      // Si hoy es lunes o domingo, ajusta al siguiente día habilitado
+      if (now.weekday == DateTime.monday) {
+        // Si es lunes, suma 1 día; si es domingo, suma 1 o 2 días según convenga (en este caso 1 día, ya que lunes también se descarta, quizá 2 días)
+        adjustedInitialDate = now.add(const Duration(days: 1));
+      } else if (now.weekday == DateTime.sunday) {
+        adjustedInitialDate = now.add(const Duration(days: 2));
+      } else {
+        adjustedInitialDate = now;
+      }
+    }
+
     final newDate = await showDatePicker(
       context: context,
       locale: const Locale('es', 'ES'),
-      initialDate: initialDate,
+      initialDate: adjustedInitialDate,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
       selectableDayPredicate: (DateTime day) {
-        // Disable Mondays and Sundays
+        // Deshabilitar lunes y domingos
         if (day.weekday == DateTime.monday || day.weekday == DateTime.sunday) {
           return false;
         }
@@ -195,7 +254,8 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           data: ThemeData.light().copyWith(
             primaryColor: Colors.blue,
             colorScheme: const ColorScheme.light(primary: Colors.blue),
-            buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+            buttonTheme:
+                const ButtonThemeData(textTheme: ButtonTextTheme.primary),
             dialogTheme: const DialogTheme(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.circular(16)),
@@ -277,10 +337,12 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
             data: ThemeData.light().copyWith(
               primaryColor: Colors.blue,
               colorScheme: const ColorScheme.light(primary: Colors.blue),
-              buttonTheme: const ButtonThemeData(textTheme: ButtonTextTheme.primary),
+              buttonTheme:
+                  const ButtonThemeData(textTheme: ButtonTextTheme.primary),
             ),
             child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+              data:
+                  MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
               child: child!,
             ),
           ),
@@ -295,7 +357,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           _timeController.text = selectedTime!.format(context);
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
           const SnackBar(
             content: Text('Hora no disponible para este día.'),
           ),
@@ -344,7 +406,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
             .where('dateTime', isEqualTo: appointmentDateTime.toIso8601String())
             .get();
         if (snapshot.docs.isNotEmpty) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
             const SnackBar(content: Text('El horario ya está reservado.')),
           );
           setState(() {
@@ -355,7 +417,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
 
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
             const SnackBar(content: Text('No autorizado')),
           );
           setState(() {
@@ -368,13 +430,13 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
             FirebaseFirestore.instance.collection("appointments").doc();
         await newAppointmentRef.set({
           'id': newAppointmentRef.id,
-          'userId': user.uid,
+          'userEmail': user.email,
           'dateTime': appointmentDateTime.toIso8601String(),
           'service': haircut,
           'notes': "",
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
           const SnackBar(content: Text('Cita reservada exitosamente.')),
         );
 
@@ -388,7 +450,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         });
         _formKey.currentState?.reset();
       } catch (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
           SnackBar(content: Text('Error: $error')),
         );
         setState(() {
@@ -470,13 +532,17 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   onPressed: _submitAppointment,
-                  child: const Text('Reservar Cita', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  child: const Text('Reservar Cita',
+                      style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
                 const SizedBox(height: 100),
                 const Text(
                   'El horario es de Martes a Viernes de 9:30–14:00, 17:00–21:00 y los Sábados de 9:30–14:00',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, color: Colors.redAccent,fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.redAccent,
+                      fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -485,7 +551,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         if (_isLoading)
           Positioned.fill(
             child: Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withAlpha(5),
               child: const Center(
                 child: CircularProgressIndicator(color: Colors.white),
               ),

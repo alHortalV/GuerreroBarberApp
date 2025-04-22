@@ -3,12 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:guerrero_barber_app/screens/HomeScreen.dart';
 import 'package:dynamic_background/dynamic_background.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:guerrero_barber_app/screens/admin/AdminPanel.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, this.initialIsLogin = true});
 
   final bool initialIsLogin;
-
   @override
   _AuthScreenState createState() => _AuthScreenState();
 }
@@ -160,6 +161,7 @@ class _AuthScreenState extends State<AuthScreen>
       if (isLogin) {
         userCredential = await _auth.signInWithEmailAndPassword(
             email: email, password: password);
+        // Obtén el nombre del usuario desde la colección de users
         final userDoc = await FirebaseFirestore.instance
             .collection('users')
             .doc(userCredential.user!.uid)
@@ -167,6 +169,33 @@ class _AuthScreenState extends State<AuthScreen>
         if (userDoc.exists) {
           final data = userDoc.data() as Map<String, dynamic>;
           username = data['username'] ?? '';
+        }
+        // Comprobar si las credenciales pertenecen a un administrador
+        final adminSnapshot = await FirebaseFirestore.instance
+            .collection('admins')
+            .where('email', isEqualTo: email)
+            .get();
+        bool isAdmin = false;
+        if (adminSnapshot.docs.isNotEmpty) {
+          final adminData = adminSnapshot.docs.first.data();
+          // Se asume que en el documento de admins se guarda la contraseña en claro (o con un método compatible)
+          if (adminData['email'] == email) {
+            isAdmin = true;
+          }
+        }
+        if (isAdmin) {
+          ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
+            SnackBar(content: Text('Bienvenido Administrador')),
+          );
+          Navigator.of(mounted ? context : context).pushReplacement(MaterialPageRoute(
+              builder: (_) =>
+                  AdminPanel())); // Asegúrate de tener implementada AdminPanelScreen
+        } else {
+          ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
+            SnackBar(content: Text('Bienvenido de nuevo $username')),
+          );
+          Navigator.of(mounted ? context : context)
+              .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
         }
       } else {
         userCredential = await _auth.createUserWithEmailAndPassword(
@@ -178,19 +207,11 @@ class _AuthScreenState extends State<AuthScreen>
           'username': username,
           'email': email,
         });
-      }
-      if (userCredential.user != null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isLogin
-                  ? 'Bienvenido de nuevo $username'
-                  : 'Registro exitoso'),
-            ),
-          );
-          Navigator.of(context)
-              .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
-        }
+        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
+          SnackBar(content: Text('Registro exitoso')),
+        );
+        Navigator.of(mounted ? context : context)
+            .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -239,6 +260,58 @@ class _AuthScreenState extends State<AuthScreen>
     setState(() {
       isForgotPassword = !isForgotPassword;
     });
+  }
+
+  // Método de inicio de sesión con Google
+  Future<void> _signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return; // Cancelado por el usuario
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential = await _auth.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      if (user != null) {
+        // Verificar si el usuario ya existe en Firestore
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (!userDoc.exists) {
+          // Crear el documento del usuario
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({
+            'username': user.displayName ?? '',
+            'email': user.email ?? '',
+            // Agrega otros campos necesarios
+          });
+        }
+
+        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
+          SnackBar(
+            content: Text("Bienvenido, ${user.displayName ?? ''}"),
+          ),
+        );
+        Navigator.of(mounted ? context : context).pushReplacement(
+          MaterialPageRoute(builder: (_) => HomeScreen()),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
+        SnackBar(
+          content: Text("Error al iniciar sesión con Google: ${e.toString()}"),
+        ),
+      );
+    }
   }
 
   @override
@@ -563,6 +636,24 @@ class _AuthScreenState extends State<AuthScreen>
                               fontSize: 18, color: Colors.white),
                         ),
                       ),
+                      if (isLogin) ...[
+                        const SizedBox(height: 12),
+                        ElevatedButton.icon(
+                          onPressed: _signInWithGoogle,
+                          label: const Text("Iniciar Sesión con Google",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              )),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       // Botones para cambiar de modo:
                       if (isForgotPassword)

@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1007565822434-fglc2691ec6ckrldfce4j13c80jgndpl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.company.guerrerobarberapp",
+            "certificate_hash": "19cec57098b46fdd06fd124edc3ee6e1abd426eb"
+          }
+        },
+        {
           "client_id": "1007565822434-kq915ritsl6lh1ufl74acdmramkgag30.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -37,35 +45,13 @@
             {
               "client_id": "1007565822434-nq4am8rhsvp0athd0g0rudlqmnpe3coa.apps.googleusercontent.com",
               "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:1007565822434:android:b6f70546f3a272764541bb",
-        "android_client_info": {
-          "package_name": "com.example.guerrero_barber_app"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "1007565822434-nq4am8rhsvp0athd0g0rudlqmnpe3coa.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyCgYIPD74JV1ajP9fL7Wa1QtP8w9Tfm1f4"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
+            },
             {
-              "client_id": "1007565822434-nq4am8rhsvp0athd0g0rudlqmnpe3coa.apps.googleusercontent.com",
-              "client_type": 3
+              "client_id": "1007565822434-ti25s7cfplaqu6vpmml8ts1hinubjdq0.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.guerreroBarberApp"
+              }
             }
           ]
         }

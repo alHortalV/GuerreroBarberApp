@@ -1,0 +1,2 @@
+/home/ubunet/Escritorio/Projects/guerrero_barber_app/android/app/.cxx/Debug/572s6w24/x86/CMakeFiles/edit_cache.dir
+/home/ubunet/Escritorio/Projects/guerrero_barber_app/android/app/.cxx/Debug/572s6w24/x86/CMakeFiles/rebuild_cache.dir

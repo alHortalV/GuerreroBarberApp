@@ -16,6 +16,7 @@ dependencies:
   dynamic_background: ^0.5.0
   curved_navigation_bar: ^1.0.6
   flutter_localization: ^0.3.2
+  google_sign_in: ^6.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

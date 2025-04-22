@@ -60,26 +60,30 @@ class NotificationsService {
     );
   }
 
-  /// Muestra una notificación programada para 2 horas antes de la cita.
+  /// Programa una notificación para la cita, calculando internamente 3 horas antes.
   Future<void> showNotification({
     required DateTime appointmentTime,
     int id = 0,
     String? title,
     String? body,
   }) async {
-    // La notificación se programará 2 horas antes de la cita.
     final scheduledTime = appointmentTime.subtract(const Duration(hours: 3));
-    // Si la hora programada es anterior a ahora, se omite la programación.
-    if (scheduledTime.isBefore(DateTime.now())) return;
+    print('Scheduled time: $scheduledTime');
+    print('Current time: ${DateTime.now()}');
+
+    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
+    final tz.TZDateTime notificationTime = scheduledTime.isBefore(now)
+        ? now.add(const Duration(seconds: 1))
+        : tz.TZDateTime.from(scheduledTime, tz.local);
+    print('Notification time: $notificationTime');
 
     await notificationsPlugin.zonedSchedule(
       id,
       title ?? 'Recordatorio de cita',
-      body ??
-          'Tienes una cita a las ${DateFormat('HH:mm').format(appointmentTime)}',
-      tz.TZDateTime.from(scheduledTime, tz.local),
+      body ?? 'Tienes una cita a las ${DateFormat('HH:mm').format(appointmentTime)}',
+      notificationTime,
       notificationDetails(),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 }

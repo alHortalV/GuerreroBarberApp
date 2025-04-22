@@ -3,7 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
+import 'package:guerrero_barber_app/services/notifications_service.dart';
 import 'package:intl/intl.dart';
+import '../global_keys.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,6 +18,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String userRole = 'cliente';
   int _currentIndex = 0;
   final PageController _pageController = PageController(initialPage: 0);
+  // Agregar GlobalKey para BookAppointmentWidget
+  final GlobalKey<_BookAppointmentWidgetState> _bookAppointmentKey =
+      GlobalKey<_BookAppointmentWidgetState>();
 
   @override
   void dispose() {
@@ -28,6 +33,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentIndex = index;
     });
     _pageController.jumpToPage(index);
+    // Si cambiamos de la pestaña reserva (índice 1), limpiamos el formulario.
+    if (index != 1) {
+      _bookAppointmentKey.currentState?.clearForm();
+    }
   }
 
   @override
@@ -63,10 +72,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
-        children: const [
-          AppointmentsList(),
-          BookAppointmentWidget(),
-          CalendarScreen(),
+        children: [
+          const AppointmentsList(),
+          BookAppointmentWidget(key: _bookAppointmentKey),
+          const CalendarScreen(),
         ],
       ),
       bottomNavigationBar: CurvedNavigationBar(
@@ -79,9 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Icon(Icons.add, size: 30, color: Colors.white),
           Icon(Icons.calendar_today, size: 30, color: Colors.white),
         ],
-        onTap: (index) {
-          _onTabTapped(index);
-        },
+        onTap: _onTabTapped,
       ),
     );
   }
@@ -103,7 +110,8 @@ class AppointmentsList extends StatelessWidget {
         future: FirebaseFirestore.instance
             .collection("appointments")
             .where('userEmail', isEqualTo: userEmail)
-            .where('dateTime', isGreaterThanOrEqualTo: DateTime.now().toIso8601String())
+            .where('dateTime',
+                isGreaterThanOrEqualTo: DateTime.now().toIso8601String())
             .orderBy('dateTime')
             .get(),
         builder: (context, snapshot) {
@@ -116,7 +124,7 @@ class AppointmentsList extends StatelessWidget {
           if (docs.isEmpty) {
             return const Center(
               child: Text(
-                "No tienes citas registradas.",
+                "No tienes citas actuales registradas.",
                 style: TextStyle(fontSize: 18),
               ),
             );
@@ -127,11 +135,11 @@ class AppointmentsList extends StatelessWidget {
             itemBuilder: (context, index) {
               final data = docs[index].data() as Map<String, dynamic>;
               final dateTime = DateTime.parse(data["dateTime"]);
-              final formattedDate = DateFormat('EEEE, d MMMM', 'es_ES').format(dateTime);
+              final formattedDate =
+                  DateFormat('EEEE, d MMMM', 'es_ES').format(dateTime);
               return Dismissible(
                 key: Key(data['id']),
                 direction: DismissDirection.endToStart,
-                // Fondo con iconos dentro del card
                 background: ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
@@ -152,19 +160,24 @@ class AppointmentsList extends StatelessWidget {
                       .collection("appointments")
                       .doc(data['id'])
                       .delete();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Cita eliminada')),
-                  );
+                  // Usa navigatorKey.currentContext! para obtener un context activo
+                  if (navigatorKey.currentContext != null) {
+                    ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+                      const SnackBar(content: Text('Cita eliminada')),
+                    );
+                  }
                 },
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: Card(
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                     elevation: 2,
                     child: ListTile(
                       leading: const Icon(Icons.event, color: Colors.blue),
-                      trailing: const Icon(Icons.arrow_back_ios, color: Colors.redAccent),
+                      trailing: const Icon(Icons.arrow_back_ios,
+                          color: Colors.redAccent),
                       title: Text(
                         "${data["service"]}",
                         style: const TextStyle(fontWeight: FontWeight.bold),
@@ -209,6 +222,16 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
   bool _isLoading = false;
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
+
+  // Método para limpiar el formulario
+  void clearForm() {
+    setState(() {
+      haircut = '';
+      _dateController.clear(); // Limpia el controlador
+      _timeController.clear(); // Asigna cadena vacía
+      _formKey.currentState?.reset();
+    });
+  }
 
   @override
   void dispose() {
@@ -333,7 +356,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           locale: const Locale('es', 'ES'),
           child: Theme(
             data: ThemeData.light().copyWith(
-              primaryColor: Colors.blue,
+              primaryColor: const Color.fromARGB(255, 59, 125, 179),
               colorScheme: const ColorScheme.light(primary: Colors.blue),
               buttonTheme:
                   const ButtonThemeData(textTheme: ButtonTextTheme.primary),
@@ -369,21 +392,24 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
       _formKey.currentState?.save();
 
       if (selectedDate == null || selectedTime == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Seleccione día y hora")),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Seleccione día y hora")),
+          );
+        }
         return;
       }
 
-      // Check if the selected day is Monday or Sunday
+      // Validar día
       if (selectedDate!.weekday == DateTime.monday ||
           selectedDate!.weekday == DateTime.sunday) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Los lunes y domingos el peluquero está cerrado.'),
-          ),
-        );
-        return; // Prevent booking
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Los lunes y domingos el peluquero está cerrado.')),
+          );
+        }
+        return;
       }
 
       setState(() {
@@ -401,26 +427,28 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
       try {
         final snapshot = await FirebaseFirestore.instance
             .collection("appointments")
-            .where('dateTime', isEqualTo: appointmentDateTime.toIso8601String())
+            .where('dateTime',
+                isEqualTo: appointmentDateTime.toIso8601String())
             .get();
+
         if (snapshot.docs.isNotEmpty) {
-          ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
-            const SnackBar(content: Text('El horario ya está reservado.')),
-          );
-          setState(() {
-            _isLoading = false;
-          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('El horario ya está reservado.')),
+            );
+          }
+          setState(() => _isLoading = false);
           return;
         }
 
         final user = FirebaseAuth.instance.currentUser;
         if (user == null) {
-          ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
-            const SnackBar(content: Text('No autorizado')),
-          );
-          setState(() {
-            _isLoading = false;
-          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('No autorizado')),
+            );
+          }
+          setState(() => _isLoading = false);
           return;
         }
 
@@ -434,26 +462,33 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           'notes': "",
         });
 
-        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
-          const SnackBar(content: Text('Cita reservada exitosamente.')),
-        );
+        // Verifica que el widget sigue montado antes de llamar a showNotification
+        if (mounted) {
+          NotificationsService().showNotification(
+            appointmentTime: appointmentDateTime,
+            title: 'Recordatorio de cita',
+            body:
+                'Tienes una cita a las ${DateFormat('HH:mm').format(appointmentDateTime)}',
+          );
+        }
 
-        setState(() {
-          selectedDate = null;
-          selectedTime = null;
-          haircut = '';
-          _isLoading = false;
-          _dateController.clear();
-          _timeController.clear();
-        });
-        _formKey.currentState?.reset();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cita reservada exitosamente.')),
+          );
+
+          // Limpia el formulario
+          clearForm();
+        }
+
+        setState(() => _isLoading = false);
       } catch (error) {
-        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
-          SnackBar(content: Text('Error: $error')),
-        );
-        setState(() {
-          _isLoading = false;
-        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $error')),
+          );
+        }
+        setState(() => _isLoading = false);
       }
     }
   }

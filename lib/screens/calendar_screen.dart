@@ -3,6 +3,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Define a class to represent an appointment
 class Appointment {
@@ -58,20 +59,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   void _loadAppointments() async {
-    // Consulta las citas del día seleccionado usando Firestore
-    final startOfDay =
-        DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-    final endOfDay = startOfDay.add(const Duration(days: 1));
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final userEmail = user.email!;
+    // Calcula el inicio del día seleccionado (00:00 horas)
+    final selectedDateStart = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+    // Definimos el fin del día seleccionado
+    final endOfDay = selectedDateStart.add(const Duration(days: 1));
 
     final snapshot = await FirestoreService.firestore
         .collection('appointments')
-        .where('dateTime', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+        .where('userEmail', isEqualTo: userEmail)
+        // Se buscan todas las citas del día seleccionado.
+        .where('dateTime', isGreaterThanOrEqualTo: selectedDateStart.toIso8601String())
         .where('dateTime', isLessThan: endOfDay.toIso8601String())
+        .orderBy('dateTime')
         .get();
 
     setState(() {
-      _appointments =
-          snapshot.docs.map((doc) => Appointment.fromMap(doc.data())).toList();
+      _appointments = snapshot.docs
+          .map((doc) => Appointment.fromMap(doc.data()))
+          .toList();
     });
   }
 

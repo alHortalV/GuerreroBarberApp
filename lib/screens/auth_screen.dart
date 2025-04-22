@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:guerrero_barber_app/screens/HomeScreen.dart';
+
 import 'package:dynamic_background/dynamic_background.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:guerrero_barber_app/screens/admin/AdminPanel.dart';
+import 'package:guerrero_barber_app/screens/admin/admin.dart';
+import 'package:guerrero_barber_app/screens/screen.dart';
+
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, this.initialIsLogin = true});

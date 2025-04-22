@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:guerrero_barber_app/screens/admin/client_history_screen.dart';
+import 'package:guerrero_barber_app/screens/admin/admin.dart';
+
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});

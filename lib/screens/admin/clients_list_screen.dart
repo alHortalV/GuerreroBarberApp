@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'client_history_screen.dart';
+import 'package:guerrero_barber_app/screens/admin/admin.dart';
+
 
 class ClientsListScreen extends StatelessWidget {
   const ClientsListScreen({super.key});

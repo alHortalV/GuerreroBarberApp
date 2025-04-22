@@ -8,12 +8,13 @@ plugins {
 
 android {
     namespace = "com.example.guerrero_barber_app"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdkVersion flutter.compileSdkVersion
+    ndkVersion flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
+        coreLibraryDesugaringEnabled true  // habilita el desugaring
     }
 
     kotlinOptions {
@@ -47,4 +48,5 @@ flutter {
 dependencies{
     implementation platform('com.google.firebase:firebase-bom:33.12.0')
     implementation 'com.google.firebase:firebase-analytics'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3' // agrega esta dependencia
 }

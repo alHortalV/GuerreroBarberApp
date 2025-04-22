@@ -1,9 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:guerrero_barber_app/screens/AuthScreen.dart';
-import 'package:guerrero_barber_app/screens/calendar_screen.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
+import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -142,7 +141,6 @@ class AppointmentsList extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Icon(Icons.arrow_back, color: Colors.white),
                         SizedBox(width: 8),
                         Icon(Icons.delete, color: Colors.white),
                       ],
@@ -166,7 +164,7 @@ class AppointmentsList extends StatelessWidget {
                     elevation: 2,
                     child: ListTile(
                       leading: const Icon(Icons.event, color: Colors.blue),
-                      trailing: const Icon(Icons.delete, color: Colors.redAccent),
+                      trailing: const Icon(Icons.arrow_back_ios, color: Colors.redAccent),
                       title: Text(
                         "${data["service"]}",
                         style: const TextStyle(fontWeight: FontWeight.bold),

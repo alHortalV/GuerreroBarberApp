@@ -69,15 +69,6 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         ],
       ),
-      body: PageView(
-        controller: _pageController,
-        physics: const NeverScrollableScrollPhysics(),
-        children: [
-          const AppointmentsList(),
-          BookAppointmentWidget(key: _bookAppointmentKey),
-          const CalendarScreen(),
-        ],
-      ),
       bottomNavigationBar: CurvedNavigationBar(
         index: _currentIndex,
         backgroundColor: Colors.transparent,
@@ -460,17 +451,20 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           'dateTime': appointmentDateTime.toIso8601String(),
           'service': haircut,
           'notes': "",
+          // Opcional: Puedes agregar un flag para indicar que ya se programó la notificación:
+          'notificationScheduled': true,
         });
 
-        // Verifica que el widget sigue montado antes de llamar a showNotification
-        if (mounted) {
-          NotificationsService().showNotification(
-            appointmentTime: appointmentDateTime,
-            title: 'Recordatorio de cita',
-            body:
-                'Tienes una cita a las ${DateFormat('HH:mm').format(appointmentDateTime)}',
-          );
-        }
+        // Calcula el momento para la notificación (por ejemplo, 2 horas antes)
+        final notificationMoment = appointmentDateTime.subtract(const Duration(minutes: 210));
+
+        // Programa la notificación para esta cita
+        await NotificationsService().scheduleNotification(
+          id: newAppointmentRef.id.hashCode, // Usar una id única para la notificación
+          title: 'Recordatorio de cita',
+          body: 'Tienes una cita a las ${DateFormat("HH:mm").format(appointmentDateTime)}',
+          scheduledTime: notificationMoment,
+        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

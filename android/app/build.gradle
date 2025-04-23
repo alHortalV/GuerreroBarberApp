@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.guerrero_barber_app"
+    namespace = "com.company.guerrero_barber_app"
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 

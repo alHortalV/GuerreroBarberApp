@@ -1,1 +1,42 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"guerrerobarberapp","appId":"1:1007565822434:android:b6f70546f3a272764541bb","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"guerrerobarberapp","configurations":{"android":"1:1007565822434:android:b6f70546f3a272764541bb","ios":"1:1007565822434:ios:fdac4987184db8294541bb","macos":"1:1007565822434:ios:fdac4987184db8294541bb","web":"1:1007565822434:web:05695ba4aa7a9f7b4541bb","windows":"1:1007565822434:web:4f2dcfa21ae638644541bb"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "guerrerobarberapp",
+          "appId": "1:1007565822434:android:b6f70546f3a272764541bb",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "guerrerobarberapp",
+          "configurations": {
+            "android": "1:1007565822434:android:b6f70546f3a272764541bb",
+            "ios": "1:1007565822434:ios:fdac4987184db8294541bb",
+            "macos": "1:1007565822434:ios:fdac4987184db8294541bb",
+            "web": "1:1007565822434:web:05695ba4aa7a9f7b4541bb",
+            "windows": "1:1007565822434:web:4f2dcfa21ae638644541bb"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ]
+}

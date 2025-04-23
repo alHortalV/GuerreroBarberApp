@@ -1,10 +1,10 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:intl/intl.dart';
 import 'package:timezone/timezone.dart' as tz;
-import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/data/latest.dart' as tzData;
 
 class NotificationsService {
-  final notificationsPlugin = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
@@ -12,24 +12,24 @@ class NotificationsService {
     if (_isInitialized) return;
 
     // Inicializa las zonas horarias.
-    tz.initializeTimeZones();
+    tzData.initializeTimeZones();
 
-    const initSettingsAndroid =
+    const androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
     const initSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
-    const initSettings = InitializationSettings(
-      android: initSettingsAndroid,
+    const settings = InitializationSettings(
+      android: androidSettings,
       iOS: initSettingsIOS,
     );
 
-    await notificationsPlugin.initialize(initSettings);
+    await flutterLocalNotificationsPlugin.initialize(settings);
 
     // Solicita permisos en iOS.
-    await notificationsPlugin
+    await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(
@@ -60,28 +60,52 @@ class NotificationsService {
     );
   }
 
-  /// Programa una notificación para la cita, calculando internamente 3 horas antes.
+  Future<void> scheduleNotification({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime scheduledTime,
+  }) async {
+    // Convertir scheduledTime a TZDateTime usando la zona local
+    tz.TZDateTime tzScheduledTime = tz.TZDateTime.from(scheduledTime, tz.local);
+    final now = tz.TZDateTime.now(tz.local);
+
+    // Si el scheduledTime ya pasó, ajustarlo para programarlo unos segundos en el futuro
+    if (tzScheduledTime.isBefore(now)) {
+      tzScheduledTime = now.add(const Duration(seconds: 5));
+    }
+
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      id,
+      title,
+      body,
+      tzScheduledTime,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'citas_channel',
+          'Recordatorios de Citas',
+          channelDescription: 'Notificaciones programadas para recordar citas',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+  }
+
+  // Si sigues usando showNotification para el background task, lo mantienes
   Future<void> showNotification({
     required DateTime appointmentTime,
-    DateTime? scheduledTime, // Nuevo parámetro opcional
-    int id = 0,
-    String? title,
-    String? body,
+    required DateTime scheduledTime,
+    required String title,
+    required String body,
   }) async {
-    // Si se pasa scheduledTime, se usará; de lo contrario, se calcula por defecto (ej. 3h antes)
-    final effectiveScheduledTime = scheduledTime ?? appointmentTime.subtract(const Duration(hours: 2));
-    final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    final tz.TZDateTime notificationTime = effectiveScheduledTime.isBefore(now)
-        ? now.add(const Duration(seconds: 1))
-        : tz.TZDateTime.from(effectiveScheduledTime, tz.local);
-
-    await notificationsPlugin.zonedSchedule(
-      id,
-      title ?? 'Recordatorio de cita',
-      body ?? 'Tienes una cita a las ${DateFormat('HH:mm').format(appointmentTime)}',
-      notificationTime,
-      notificationDetails(),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    // Puedes llamar a scheduleNotification usando una id generada, por ejemplo:
+    await scheduleNotification(
+      id: appointmentTime.hashCode, // O usa otra lógica de id
+      title: title,
+      body: body,
+      scheduledTime: scheduledTime,
     );
   }
 }

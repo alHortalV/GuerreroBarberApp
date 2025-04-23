@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:guerrero_barber_app/screens/admin/admin.dart';
 
-
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});
 
@@ -31,7 +30,7 @@ class _AdminPanelState extends State<AdminPanel> {
               stream: FirebaseFirestore.instance.collection('users').snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return const Center(child: Text('Error al cargar clientes.'));
+                  return const Center(child: Text('Error al cargar los clientes.'));
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -44,7 +43,6 @@ class _AdminPanelState extends State<AdminPanel> {
                   scrollDirection: Axis.horizontal,
                   itemCount: clients.length,
                   itemBuilder: (context, index) {
-                    print('Documento $index: ${clients[index].data()}'); // Debug
                     final data = clients[index].data() as Map<String, dynamic>;
                     final clientName = data['username'] ?? data['email'];
                     final clientEmail = data['email'];

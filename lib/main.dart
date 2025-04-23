@@ -14,18 +14,20 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  
-  // Solicita permiso para notificaciones si es Android
+
   if (Platform.isAndroid) {
-    await Permission.notification.request();
+    await Permission.ignoreBatteryOptimizations.request();
   }
+
+  // Solicita permiso para notificaciones si es Android
+  
   
   await NotificationsService().initNotification();
   await AndroidAlarmManager.initialize();
 
-  // Programa la tarea periódica: se ejecuta cada 15 minutos
+  // Programa la tarea periódica: se ejecuta cada 1 minuto
   await AndroidAlarmManager.periodic(
-    const Duration(minutes: 5),
+    const Duration(minutes: 1),
     0, // ID único para la tarea
     checkAppointmentsCallback,
     wakeup: true,

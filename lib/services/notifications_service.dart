@@ -63,19 +63,17 @@ class NotificationsService {
   /// Programa una notificación para la cita, calculando internamente 3 horas antes.
   Future<void> showNotification({
     required DateTime appointmentTime,
+    DateTime? scheduledTime, // Nuevo parámetro opcional
     int id = 0,
     String? title,
     String? body,
   }) async {
-    final scheduledTime = appointmentTime.subtract(const Duration(hours: 3));
-    print('Scheduled time: $scheduledTime');
-    print('Current time: ${DateTime.now()}');
-
+    // Si se pasa scheduledTime, se usará; de lo contrario, se calcula por defecto (ej. 3h antes)
+    final effectiveScheduledTime = scheduledTime ?? appointmentTime.subtract(const Duration(hours: 2));
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    final tz.TZDateTime notificationTime = scheduledTime.isBefore(now)
+    final tz.TZDateTime notificationTime = effectiveScheduledTime.isBefore(now)
         ? now.add(const Duration(seconds: 1))
-        : tz.TZDateTime.from(scheduledTime, tz.local);
-    print('Notification time: $notificationTime');
+        : tz.TZDateTime.from(effectiveScheduledTime, tz.local);
 
     await notificationsPlugin.zonedSchedule(
       id,

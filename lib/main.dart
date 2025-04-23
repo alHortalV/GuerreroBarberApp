@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -7,7 +6,6 @@ import 'package:guerrero_barber_app/services/notifications_service.dart';
 import 'package:guerrero_barber_app/screens/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:guerrero_barber_app/theme/theme.dart';
-import 'package:timezone/timezone.dart' as tz;
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'background_tasks.dart';
 
@@ -27,11 +25,11 @@ Future<void> main() async {
 
   // Programa la tarea periódica: se ejecuta cada 15 minutos
   await AndroidAlarmManager.periodic(
-    const Duration(minutes: 15),
+    const Duration(minutes: 5),
     0, // ID único para la tarea
     checkAppointmentsCallback,
     wakeup: true,
-    rescheduleOnReboot: true,
+    rescheduleOnReboot: false,
   );
 
   runApp(const MyApp());

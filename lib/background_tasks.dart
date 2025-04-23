@@ -1,8 +1,6 @@
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
 import 'package:intl/intl.dart';
-import 'package:timezone/timezone.dart' as tz;
 
 Future<void> checkAppointmentsCallback() async {
   // Consulta las citas pendientes
@@ -18,17 +16,14 @@ Future<void> checkAppointmentsCallback() async {
     final nextAppointmentData = querySnapshot.docs.first.data();
     final appointmentTime = DateTime.parse(nextAppointmentData["dateTime"]);
     
-    // Calcula el momento de notificación: 3 horas antes
-    final notificationMoment = appointmentTime.subtract(const Duration(hours: 3));
+    // Calcula el momento de notificación: 2 horas antes
+    final notificationMoment = appointmentTime.subtract(const Duration(hours: 2));
     
-    // Asegúrate de que sea un momento futuro
-    final tz.TZDateTime tzNotificationTime = notificationMoment.isBefore(DateTime.now())
-        ? tz.TZDateTime.now(tz.local).add(const Duration(seconds: 1))
-        : tz.TZDateTime.from(notificationMoment, tz.local);
     
     // Programa la notificación usando tu servicio
     await NotificationsService().showNotification(
       appointmentTime: appointmentTime,
+      scheduledTime: notificationMoment,
       title: 'Recordatorio de cita',
       body: 'Tienes una cita a las ${DateFormat("HH:mm").format(appointmentTime)}',
     );

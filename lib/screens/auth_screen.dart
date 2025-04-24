@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 
 import 'package:dynamic_background/dynamic_background.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:guerrero_barber_app/screens/admin/admin.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 
 
@@ -105,7 +104,7 @@ class _AuthScreenState extends State<AuthScreen>
       return;
     }
 
-    // Si está en modo “Reestablecer contraseña” solo se necesita el correo
+    // Si está en modo "Reestablecer contraseña" solo se necesita el correo
     if (isForgotPassword) {
       try {
         await _auth.sendPasswordResetEmail(email: email);
@@ -208,6 +207,10 @@ class _AuthScreenState extends State<AuthScreen>
             .set({
           'username': username,
           'email': email,
+          'phone': '', // Campo para el número de teléfono
+          'profileImageUrl': '', // Campo para la foto de perfil
+          'createdAt': FieldValue.serverTimestamp(), // Fecha de creación
+          'role': 'cliente', // Rol por defecto
         });
         ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
           SnackBar(content: Text('Registro exitoso')),
@@ -294,7 +297,10 @@ class _AuthScreenState extends State<AuthScreen>
               .set({
             'username': user.displayName ?? '',
             'email': user.email ?? '',
-            // Agrega otros campos necesarios
+            'phone': '', // Campo para el número de teléfono
+            'profileImageUrl': user.photoURL ?? '', // Usar la foto de perfil de Google si está disponible
+            'createdAt': FieldValue.serverTimestamp(), // Fecha de creación
+            'role': 'cliente',
           });
         }
 

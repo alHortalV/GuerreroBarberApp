@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
+import 'package:guerrero_barber_app/services/supabase_service.dart';
 import 'package:intl/intl.dart';
 import '../global_keys.dart';
-import 'admin/pending_appointments_screen.dart';
-import 'appointment_status_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,11 +21,41 @@ class _HomeScreenState extends State<HomeScreen> {
   final PageController _pageController = PageController(initialPage: 0);
   final GlobalKey<_BookAppointmentWidgetState> _bookAppointmentKey =
       GlobalKey<_BookAppointmentWidgetState>();
+  String? _profileImageUrl;
+  String? _username;
 
   @override
   void initState() {
     super.initState();
     _checkUserRole();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (userDoc.exists) {
+        final imageUrl = userDoc.data()?['profileImageUrl'];
+        if (imageUrl != null && imageUrl.contains('guerrerobarberapp')) {
+          // Si la URL es de Supabase, intentamos obtener una URL firmada
+          final fileName = imageUrl.split('guerrerobarberapp/').last;
+          final signedUrl = await SupabaseService.getPublicUrl(fileName);
+          setState(() {
+            _profileImageUrl = signedUrl;
+            _username = userDoc.data()?['username'] ?? user.email;
+          });
+        } else {
+          setState(() {
+            _profileImageUrl = imageUrl;
+            _username = userDoc.data()?['username'] ?? user.email;
+          });
+        }
+      }
+    }
   }
 
   Future<void> _checkUserRole() async {
@@ -51,17 +80,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-    _pageController.jumpToPage(index);
-    if (index != 1) {
-      _bookAppointmentKey.currentState?.clearForm();
+    if (index >= 0 && index < (userRole == 'admin' ? 4 : 4)) {
+      setState(() {
+        _currentIndex = index;
+      });
+      _pageController.jumpToPage(index);
+      if (index != 1) {
+        _bookAppointmentKey.currentState?.clearForm();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> navigationItems = [
+      const Icon(Icons.list, size: 30, color: Colors.white),
+      const Icon(Icons.add, size: 30, color: Colors.white),
+      const Icon(Icons.calendar_today, size: 30, color: Colors.white),
+      Icon(
+        userRole == 'admin' ? Icons.admin_panel_settings : Icons.pending_actions,
+        size: 30,
+        color: Colors.white,
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -74,6 +116,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
+          if (userRole != 'admin')
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              },
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                child: CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.white,
+                  backgroundImage: _profileImageUrl != null
+                      ? NetworkImage(_profileImageUrl!)
+                      : null,
+                  child: _profileImageUrl == null
+                      ? const Icon(Icons.person, color: Colors.blue)
+                      : null,
+                ),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.exit_to_app, color: Colors.white),
             onPressed: () async {
@@ -87,15 +150,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }
             },
-          )
+          ),
         ],
       ),
       body: PageView(
         controller: _pageController,
         onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          if (index >= 0 && index < (userRole == 'admin' ? 4 : 4)) {
+            setState(() {
+              _currentIndex = index;
+            });
+          }
         },
         children: [
           const AppointmentsList(),
@@ -108,20 +173,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       bottomNavigationBar: CurvedNavigationBar(
+        key: const Key('bottomNav'),
         index: _currentIndex,
         backgroundColor: Colors.transparent,
         color: Colors.blue,
         buttonBackgroundColor: Colors.redAccent,
-        items: [
-          const Icon(Icons.list, size: 30, color: Colors.white),
-          const Icon(Icons.add, size: 30, color: Colors.white),
-          const Icon(Icons.calendar_today, size: 30, color: Colors.white),
-          Icon(
-            userRole == 'admin' ? Icons.admin_panel_settings : Icons.pending_actions,
-            size: 30,
-            color: Colors.white,
-          ),
-        ],
+        items: navigationItems,
         onTap: _onTabTapped,
       ),
     );
@@ -485,23 +542,32 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           return;
         }
 
+        // Obtener el username del usuario
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        final username = userDoc.data()?['username'] ?? user.email;
+
         final newAppointmentRef =
             FirebaseFirestore.instance.collection("appointments").doc();
         await newAppointmentRef.set({
           'id': newAppointmentRef.id,
           'userEmail': user.email,
+          'username': username,
           'dateTime': appointmentDateTime.toIso8601String(),
           'service': haircut,
           'notes': "",
-          'status': 'pending',
+          'status': "pending",
           'notificationScheduled': true,
         });
 
         // Notificar al administrador sobre la nueva cita pendiente
-        final adminSnapshot = await FirebaseFirestore.instance
-            .collection('admins')
-            .get();
+        final adminSnapshot =
+            await FirebaseFirestore.instance.collection('admins').get();
 
+        // ignore: unused_local_variable
         for (var adminDoc in adminSnapshot.docs) {
           // Enviar notificación a cada administrador
           await NotificationsService().showNotification(

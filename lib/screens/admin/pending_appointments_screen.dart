@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
 
 class PendingAppointmentsScreen extends StatelessWidget {
-  const PendingAppointmentsScreen({Key? key}) : super(key: key);
+  const PendingAppointmentsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +12,6 @@ class PendingAppointmentsScreen extends StatelessWidget {
       stream: FirebaseFirestore.instance
           .collection('appointments')
           .where('status', isEqualTo: 'pending')
-          .orderBy('dateTime')
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -39,7 +38,7 @@ class PendingAppointmentsScreen extends StatelessWidget {
               margin: const EdgeInsets.all(8.0),
               child: ListTile(
                 title: Text(
-                  'Cliente: ${data['userEmail']}',
+                  'Cliente: ${data['username'] ?? data['userEmail']}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Column(

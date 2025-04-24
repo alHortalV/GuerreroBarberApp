@@ -107,11 +107,14 @@ class NotificationsService {
           playSound: true,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
     );
   }
 
-  static Future<void> _showNotification(Map<String, dynamic> params) async {
+  @pragma('vm:entry-point')
+  static Future<void> _showNotification(int id, Map<String, dynamic>? params) async {
+    if (params == null) return;
+
     final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
         FlutterLocalNotificationsPlugin();
     
@@ -130,7 +133,7 @@ class NotificationsService {
         NotificationDetails(android: androidPlatformChannelSpecifics);
 
     await flutterLocalNotificationsPlugin.show(
-      params['id'] as int,
+      id,
       params['title'] as String,
       params['body'] as String,
       platformChannelSpecifics,

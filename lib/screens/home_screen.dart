@@ -69,6 +69,19 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         ],
       ),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        children: const [
+          AppointmentsList(), // Lista de citas
+          BookAppointmentWidget(), // Reserva de citas
+          CalendarScreen(), // Calendario
+        ],
+      ),
       bottomNavigationBar: CurvedNavigationBar(
         index: _currentIndex,
         backgroundColor: Colors.transparent,
@@ -153,7 +166,8 @@ class AppointmentsList extends StatelessWidget {
                       .delete();
                   // Usa navigatorKey.currentContext! para obtener un context activo
                   if (navigatorKey.currentContext != null) {
-                    ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+                    ScaffoldMessenger.of(navigatorKey.currentContext!)
+                        .showSnackBar(
                       const SnackBar(content: Text('Cita eliminada')),
                     );
                   }
@@ -316,8 +330,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         const TimeOfDay(hour: 19, minute: 00),
         const TimeOfDay(hour: 19, minute: 30),
         const TimeOfDay(hour: 20, minute: 00),
-        const TimeOfDay(hour: 20, minute: 30),
-        const TimeOfDay(hour: 21, minute: 00),
+        const TimeOfDay(hour: 20, minute: 30)
       ]);
     } else if (selectedDate!.weekday == DateTime.saturday) {
       availableTimes.addAll([
@@ -330,7 +343,6 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         const TimeOfDay(hour: 12, minute: 30),
         const TimeOfDay(hour: 13, minute: 00),
         const TimeOfDay(hour: 13, minute: 30),
-        const TimeOfDay(hour: 14, minute: 00),
       ]);
     }
 
@@ -397,7 +409,8 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text('Los lunes y domingos el peluquero está cerrado.')),
+                content:
+                    Text('Los lunes y domingos el peluquero está cerrado.')),
           );
         }
         return;
@@ -418,8 +431,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
       try {
         final snapshot = await FirebaseFirestore.instance
             .collection("appointments")
-            .where('dateTime',
-                isEqualTo: appointmentDateTime.toIso8601String())
+            .where('dateTime', isEqualTo: appointmentDateTime.toIso8601String())
             .get();
 
         if (snapshot.docs.isNotEmpty) {
@@ -456,13 +468,16 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         });
 
         // Calcula el momento para la notificación (por ejemplo, 2 horas antes)
-        final notificationMoment = appointmentDateTime.subtract(const Duration(minutes: 210));
+        final notificationMoment =
+            appointmentDateTime.subtract(const Duration(minutes: 210));
 
         // Programa la notificación para esta cita
         await NotificationsService().scheduleNotification(
-          id: newAppointmentRef.id.hashCode, // Usar una id única para la notificación
+          id: newAppointmentRef
+              .id.hashCode, // Usar una id única para la notificación
           title: 'Recordatorio de cita',
-          body: 'Tienes una cita a las ${DateFormat("HH:mm").format(appointmentDateTime)}',
+          body:
+              'Tienes una cita a las ${DateFormat("HH:mm").format(appointmentDateTime)}',
           scheduledTime: notificationMoment,
         );
 

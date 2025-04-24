@@ -469,7 +469,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
 
         // Calcula el momento para la notificación (por ejemplo, 2 horas antes)
         final notificationMoment =
-            appointmentDateTime.subtract(const Duration(minutes: 210));
+            appointmentDateTime.subtract(const Duration(hours: 1));
 
         // Programa la notificación para esta cita
         await NotificationsService().scheduleNotification(

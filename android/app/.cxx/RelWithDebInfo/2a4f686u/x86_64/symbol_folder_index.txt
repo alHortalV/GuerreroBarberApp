@@ -1,0 +1,1 @@
+/home/ubunet/Escritorio/Projects/guerrero_barber_app/build/app/intermediates/cxx/RelWithDebInfo/2a4f686u/obj/x86_64

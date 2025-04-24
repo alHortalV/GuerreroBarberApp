@@ -15,14 +15,17 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
+  // Solicitar permisos necesarios
   if (Platform.isAndroid) {
+    await Permission.notification.request();
     await Permission.ignoreBatteryOptimizations.request();
+    await Permission.scheduleExactAlarm.request();
   }
 
-  // Solicita permiso para notificaciones si es Android
-  
-  
+  // Inicializar el servicio de notificaciones
   await NotificationsService().initNotification();
+  
+  // Inicializar AndroidAlarmManager
   await AndroidAlarmManager.initialize();
 
   // Programa la tarea periódica: se ejecuta cada 1 minuto
@@ -31,7 +34,7 @@ Future<void> main() async {
     0, // ID único para la tarea
     checkAppointmentsCallback,
     wakeup: true,
-    rescheduleOnReboot: false,
+    rescheduleOnReboot: true,
   );
 
   runApp(const MyApp());

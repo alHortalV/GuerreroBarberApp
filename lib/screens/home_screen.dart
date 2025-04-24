@@ -6,6 +6,8 @@ import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
 import 'package:intl/intl.dart';
 import '../global_keys.dart';
+import 'admin/pending_appointments_screen.dart';
+import 'appointment_status_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,9 +20,29 @@ class _HomeScreenState extends State<HomeScreen> {
   String userRole = 'cliente';
   int _currentIndex = 0;
   final PageController _pageController = PageController(initialPage: 0);
-  // Agregar GlobalKey para BookAppointmentWidget
   final GlobalKey<_BookAppointmentWidgetState> _bookAppointmentKey =
       GlobalKey<_BookAppointmentWidgetState>();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserRole();
+  }
+
+  Future<void> _checkUserRole() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          userRole = userDoc.data()?['role'] ?? 'cliente';
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -33,7 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentIndex = index;
     });
     _pageController.jumpToPage(index);
-    // Si cambiamos de la pestaña reserva (índice 1), limpiamos el formulario.
     if (index != 1) {
       _bookAppointmentKey.currentState?.clearForm();
     }
@@ -76,10 +97,14 @@ class _HomeScreenState extends State<HomeScreen> {
             _currentIndex = index;
           });
         },
-        children: const [
-          AppointmentsList(), // Lista de citas
-          BookAppointmentWidget(), // Reserva de citas
-          CalendarScreen(), // Calendario
+        children: [
+          const AppointmentsList(),
+          const BookAppointmentWidget(),
+          const CalendarScreen(),
+          if (userRole == 'admin')
+            const PendingAppointmentsScreen()
+          else
+            const AppointmentStatusScreen(),
         ],
       ),
       bottomNavigationBar: CurvedNavigationBar(
@@ -87,10 +112,15 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Colors.transparent,
         color: Colors.blue,
         buttonBackgroundColor: Colors.redAccent,
-        items: const <Widget>[
-          Icon(Icons.list, size: 30, color: Colors.white),
-          Icon(Icons.add, size: 30, color: Colors.white),
-          Icon(Icons.calendar_today, size: 30, color: Colors.white),
+        items: [
+          const Icon(Icons.list, size: 30, color: Colors.white),
+          const Icon(Icons.add, size: 30, color: Colors.white),
+          const Icon(Icons.calendar_today, size: 30, color: Colors.white),
+          Icon(
+            userRole == 'admin' ? Icons.admin_panel_settings : Icons.pending_actions,
+            size: 30,
+            color: Colors.white,
+          ),
         ],
         onTap: _onTabTapped,
       ),
@@ -463,27 +493,30 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           'dateTime': appointmentDateTime.toIso8601String(),
           'service': haircut,
           'notes': "",
-          // Opcional: Puedes agregar un flag para indicar que ya se programó la notificación:
+          'status': 'pending',
           'notificationScheduled': true,
         });
 
-        // Calcula el momento para la notificación (por ejemplo, 2 horas antes)
-        final notificationMoment =
-            appointmentDateTime.subtract(const Duration(hours: 1));
+        // Notificar al administrador sobre la nueva cita pendiente
+        final adminSnapshot = await FirebaseFirestore.instance
+            .collection('admins')
+            .get();
 
-        // Programa la notificación para esta cita
-        await NotificationsService().scheduleNotification(
-          id: newAppointmentRef
-              .id.hashCode, // Usar una id única para la notificación
-          title: 'Recordatorio de cita',
-          body:
-              'Tienes una cita a las ${DateFormat("HH:mm").format(appointmentDateTime)}',
-          scheduledTime: notificationMoment,
-        );
+        for (var adminDoc in adminSnapshot.docs) {
+          // Enviar notificación a cada administrador
+          await NotificationsService().showNotification(
+            title: 'Nueva cita pendiente',
+            body: 'Tienes una nueva cita pendiente de aprobación',
+            appointmentTime: appointmentDateTime,
+            scheduledTime: DateTime.now(),
+          );
+        }
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Cita reservada exitosamente.')),
+            const SnackBar(
+                content: Text(
+                    'Cita registrada. Pendiente de aprobación por el administrador.')),
           );
 
           // Limpia el formulario

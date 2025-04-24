@@ -1,6 +1,7 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzData;
+import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 
 class NotificationsService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -75,6 +76,21 @@ class NotificationsService {
       tzScheduledTime = now.add(const Duration(seconds: 5));
     }
 
+    // Programar la notificación usando AndroidAlarmManager para mayor confiabilidad
+    await AndroidAlarmManager.oneShotAt(
+      tzScheduledTime,
+      id,
+      _showNotification,
+      exact: true,
+      wakeup: true,
+      rescheduleOnReboot: true,
+      params: {
+        'title': title,
+        'body': body,
+      },
+    );
+
+    // También programar con flutter_local_notifications como respaldo
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,
@@ -87,9 +103,37 @@ class NotificationsService {
           channelDescription: 'Notificaciones programadas para recordar citas',
           importance: Importance.max,
           priority: Priority.high,
+          enableVibration: true,
+          playSound: true,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    );
+  }
+
+  static Future<void> _showNotification(Map<String, dynamic> params) async {
+    final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+        FlutterLocalNotificationsPlugin();
+    
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'citas_channel',
+      'Recordatorios de Citas',
+      channelDescription: 'Notificaciones programadas para recordar citas',
+      importance: Importance.max,
+      priority: Priority.high,
+      enableVibration: true,
+      playSound: true,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await flutterLocalNotificationsPlugin.show(
+      params['id'] as int,
+      params['title'] as String,
+      params['body'] as String,
+      platformChannelSpecifics,
     );
   }
 

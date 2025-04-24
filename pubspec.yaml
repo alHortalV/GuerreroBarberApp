@@ -1,7 +1,7 @@
 name: guerrero_barber_app
 description: "A new Flutter project."
 publish_to: 'none'
-version: 0.1.0
+version: 1.0.0
 
 environment:
   sdk: ^3.6.2
@@ -21,6 +21,7 @@ dependencies:
   timezone: ^0.10.0
   permission_handler: ^12.0.0+1
   android_alarm_manager_plus: ^4.0.7
+  timeline_tile: ^2.0.0
 
 dev_dependencies:
   flutter_test:

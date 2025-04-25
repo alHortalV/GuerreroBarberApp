@@ -3,6 +3,8 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzData;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:guerrero_barber_app/services/device_token_service.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class NotificationsService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -64,14 +66,27 @@ class NotificationsService {
       final List<String> adminTokens = await _deviceTokenService.getAllAdminDeviceTokens();
       
       for (String token in adminTokens) {
-        await FirebaseMessaging.instance.sendMessage(
-          to: token,
-          data: {
-            'title': title,
-            'body': body,
-            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
-          },
-        );
+        try {
+          await http.post(
+            Uri.parse('https://fcm.googleapis.com/fcm/send'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'key=BLfl2TrjL6juJ49ol1Ks8iu3x0iB5djXAu0q5kOsVHcKI6dwTzHqf2UlCcuSYzkO7pDgmR5AWAt6hYKIG7aVXQk', // Reemplaza con tu clave de servidor FCM
+            },
+            body: json.encode({
+              'to': token,
+              'notification': {
+                'title': title,
+                'body': body,
+              },
+              'data': {
+                'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+              },
+            }),
+          );
+        } catch (e) {
+          print('Error al enviar notificación al token $token: $e');
+        }
       }
     } catch (e) {
       print('Error al enviar notificación a administradores: $e');
@@ -131,5 +146,130 @@ class NotificationsService {
       body,
       platformDetails,
     );
+  }
+
+  // Método específico para notificar sobre citas pendientes
+  Future<void> notifyPendingAppointment() async {
+    try {
+      final List<String> adminTokens = await _deviceTokenService.getAllAdminDeviceTokens();
+      
+      if (adminTokens.isEmpty) {
+        print('No hay tokens de administradores disponibles');
+        return;
+      }
+
+      const title = "Citas Pendientes";
+      const body = "Tienes citas pendientes por aprobar";
+      
+      for (String token in adminTokens) {
+        try {
+          // Enviar mensaje FCM
+          await http.post(
+            Uri.parse('https://fcm.googleapis.com/fcm/send'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'key=BLfl2TrjL6juJ49ol1Ks8iu3x0iB5djXAu0q5kOsVHcKI6dwTzHqf2UlCcuSYzkO7pDgmR5AWAt6hYKIG7aVXQk', // Reemplaza con tu clave de servidor FCM
+            },
+            body: json.encode({
+              'to': token,
+              'notification': {
+                'title': title,
+                'body': body,
+              },
+              'data': {
+                'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+                'type': 'pending_appointment',
+              },
+            }),
+          );
+
+          // También mostrar una notificación local
+          await showNotification(
+            title: title,
+            body: body,
+            appointmentTime: DateTime.now(),
+            scheduledTime: DateTime.now(),
+          );
+        } catch (tokenError) {
+          print('Error al enviar notificación al token $token: $tokenError');
+          continue;
+        }
+      }
+    } catch (e) {
+      print('Error al enviar notificación de cita pendiente: $e');
+      rethrow;
+    }
+  }
+
+  // Método para notificar al cliente que su cita ha sido aceptada
+  Future<void> notifyAppointmentAccepted({
+    required String userId,
+    required DateTime appointmentTime,
+  }) async {
+    try {
+      final List<String> userTokens = await _deviceTokenService.getUserDeviceTokens(userId);
+      
+      if (userTokens.isEmpty) {
+        print('No hay tokens disponibles para el usuario $userId');
+        return;
+      }
+
+      final String formattedDate = "${appointmentTime.day}/${appointmentTime.month}/${appointmentTime.year}";
+      final String formattedTime = "${appointmentTime.hour.toString().padLeft(2, '0')}:${appointmentTime.minute.toString().padLeft(2, '0')}";
+      
+      const title = "¡Cita Confirmada!";
+      final body = "Tu cita para el $formattedDate a las $formattedTime ha sido confirmada";
+      
+      for (String token in userTokens) {
+        try {
+          // Enviar mensaje FCM
+          await http.post(
+            Uri.parse('https://fcm.googleapis.com/fcm/send'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'key=BLfl2TrjL6juJ49ol1Ks8iu3x0iB5djXAu0q5kOsVHcKI6dwTzHqf2UlCcuSYzkO7pDgmR5AWAt6hYKIG7aVXQk', // Reemplaza con tu clave de servidor FCM
+            },
+            body: json.encode({
+              'to': token,
+              'notification': {
+                'title': title,
+                'body': body,
+              },
+              'data': {
+                'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+                'type': 'appointment_accepted',
+                'appointment_time': appointmentTime.toIso8601String(),
+              },
+            }),
+          );
+
+          // También mostrar una notificación local
+          await showNotification(
+            title: title,
+            body: body,
+            appointmentTime: appointmentTime,
+            scheduledTime: DateTime.now(),
+          );
+        } catch (tokenError) {
+          print('Error al enviar notificación al token $token: $tokenError');
+          continue;
+        }
+      }
+    } catch (e) {
+      print('Error al enviar notificación de cita aceptada: $e');
+      rethrow;
+    }
+  }
+
+  // Método estático para verificar citas pendientes (llamado por AndroidAlarmManager)
+  @pragma('vm:entry-point')
+  static Future<void> checkPendingAppointments() async {
+    try {
+      final notificationsService = NotificationsService();
+      await notificationsService.initNotification();
+      await notificationsService.notifyPendingAppointment();
+    } catch (e) {
+      print('Error al verificar citas pendientes: $e');
+    }
   }
 }

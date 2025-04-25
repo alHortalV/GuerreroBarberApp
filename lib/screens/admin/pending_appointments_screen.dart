@@ -89,12 +89,15 @@ class PendingAppointmentsScreen extends StatelessWidget {
 
       // Enviar notificación al cliente
       final dateTime = DateTime.parse(appointmentData['dateTime']);
-      await NotificationsService().showNotification(
-        title: '¡Tu cita ha sido aprobada!',
-        body: 'Tu cita para el ${DateFormat('EEEE d MMMM', 'es_ES').format(dateTime)} a las ${DateFormat('HH:mm').format(dateTime)} ha sido confirmada.',
-        appointmentTime: dateTime,
-        scheduledTime: DateTime.now(),
-      );
+      final userId = appointmentData['userId'];
+      
+      if (userId != null) {
+        final notificationsService = NotificationsService();
+        await notificationsService.notifyAppointmentAccepted(
+          userId: userId,
+          appointmentTime: dateTime,
+        );
+      }
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

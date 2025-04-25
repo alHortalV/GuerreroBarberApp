@@ -188,7 +188,7 @@ class _AuthScreenState extends State<AuthScreen>
         }
         if (isAdmin) {
           // Si es administrador, registrar el token del dispositivo
-          await DeviceTokenService().registerAdminDeviceToken();
+          await DeviceTokenService().registerDeviceToken();
           ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
             SnackBar(content: Text('Bienvenido Administrador')),
           );

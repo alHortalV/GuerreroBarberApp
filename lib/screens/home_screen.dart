@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
+import 'package:guerrero_barber_app/services/device_token_service.dart';
 import 'package:guerrero_barber_app/services/supabase_service.dart';
 import 'package:intl/intl.dart';
 import '../global_keys.dart';
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _checkUserRole();
     _loadUserData();
     _loadProfileImage();
+    _registerDeviceToken();
   }
 
   Future<void> _loadUserData() async {
@@ -86,6 +88,14 @@ class _HomeScreenState extends State<HomeScreen> {
           _profileImageUrl = userDoc.data()?['profileImageUrl'];
         });
       }
+    }
+  }
+
+  Future<void> _registerDeviceToken() async {
+    try {
+      await DeviceTokenService().registerDeviceToken();
+    } catch (e) {
+      print('Error al registrar el token del dispositivo: $e');
     }
   }
 
@@ -552,6 +562,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         await newAppointmentRef.set({
           'id': newAppointmentRef.id,
           'userEmail': user.email,
+          'userId': user.uid,
           'dateTime': appointmentDateTime.toIso8601String(),
           'service': haircut,
           'notes': "",
@@ -559,11 +570,9 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           'notificationScheduled': true,
         });
 
-        // Enviar notificación solo a los administradores
-        await NotificationsService().sendAdminNotification(
-          title: 'Nueva cita pendiente',
-          body: 'Tienes una nueva cita pendiente de aprobación',
-        );
+        // Enviar notificación a los administradores
+        final notificationsService = NotificationsService();
+        await notificationsService.notifyPendingAppointment();
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

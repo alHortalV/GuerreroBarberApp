@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:guerrero_barber_app/services/connectivity_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,69 +17,145 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _animationController;
   late Animation<Color?> _colorAnimation1;
   late Animation<Color?> _colorAnimation2;
+  bool _isLoading = true;
+  String? _error;
+  final ConnectivityService _connectivityService = ConnectivityService();
+  StreamSubscription? _connectivitySubscription;
 
   @override
   void initState() {
     super.initState();
-    // Configuramos el animation controller para animar el fondo
+    _setupAnimations();
+    _setupConnectivity();
+  }
+
+  void _setupAnimations() {
     _animationController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
     )..repeat(reverse: true);
 
-    // Animar entre dos colores para un gradiente dinámico
     _colorAnimation1 = ColorTween(
-      begin: Colors.blue.shade900, // azul marino
-      end: Colors.blue.shade300, // azul claro
+      begin: Colors.blue.shade900,
+      end: Colors.blue.shade300,
     ).animate(_animationController);
 
     _colorAnimation2 = ColorTween(
       begin: Colors.black,
-      end: Colors.blue, // azul para contraste
+      end: Colors.blue,
     ).animate(_animationController);
+  }
 
-    // Verificar si hay una sesión activa después de unos segundos
-    Timer(const Duration(seconds: 3), () {
-      _checkAuthState();
+  void _setupConnectivity() {
+    _connectivitySubscription = _connectivityService
+        .onConnectivityChanged.listen((bool hasConnection) {
+      if (mounted) {
+        setState(() {
+          if (hasConnection) {
+            if (_error != null) {
+              _error = null;
+              _isLoading = true;
+              _initializeApp();
+            }
+          } else {
+            _error = 'No hay conexión a Internet';
+            _isLoading = false;
+          }
+        });
+      }
     });
+
+    _initializeApp();
+  }
+
+  Future<void> _initializeApp() async {
+    if (!mounted) return;
+
+    try {
+      final hasConnection = await _connectivityService.checkConnection();
+      
+      if (!mounted) return;
+
+      if (!hasConnection) {
+        setState(() {
+          _error = 'No hay conexión a Internet';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+      
+      await _checkAuthState();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _checkAuthState() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      // El usuario está autenticado, verificar si es admin
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (!mounted) return;
+
+      if (user == null) {
+        _navigateToAuth();
+        return;
+      }
+
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
       
+      if (!mounted) return;
+
       if (userDoc.exists) {
         final role = userDoc.data()?['role'];
-        if (mounted) {
-          if (role == 'admin') {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const AdminPanel()),
-            );
-          } else {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const HomeScreen()),
-            );
-          }
+        if (role == 'admin') {
+          _navigateToAdmin();
+        } else {
+          _navigateToHome();
         }
+      } else {
+        _navigateToAuth();
       }
-    } else {
-      // No hay sesión activa, ir a la pantalla de autenticación
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AuthScreen()),
-        );
-      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
     }
+  }
+
+  void _navigateToAuth() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const AuthScreen()),
+    );
+  }
+
+  void _navigateToHome() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
+    );
+  }
+
+  void _navigateToAdmin() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const AdminPanel()),
+    );
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _connectivitySubscription?.cancel();
+    _connectivityService.dispose();
     super.dispose();
   }
 
@@ -100,11 +177,10 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Icono alusivo a la barbería
                   const Icon(
                     Icons.content_cut,
                     size: 100,
-                    color: Colors.red, // acento típico de peluquería
+                    color: Colors.red,
                   ),
                   const SizedBox(height: 20),
                   const Text(
@@ -114,7 +190,31 @@ class _SplashScreenState extends State<SplashScreen>
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
-                  )
+                  ),
+                  const SizedBox(height: 30),
+                  if (_isLoading)
+                    const CircularProgressIndicator(color: Colors.white)
+                  else if (_error != null)
+                    Column(
+                      children: [
+                        Text(
+                          _error!,
+                          style: const TextStyle(color: Colors.white),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _error = null;
+                              _isLoading = true;
+                            });
+                            _initializeApp();
+                          },
+                          child: const Text('Reintentar'),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),

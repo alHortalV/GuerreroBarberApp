@@ -17,27 +17,40 @@ class DeviceTokenService {
     }
   }
 
-  // Registrar el token del dispositivo para el administrador
-  Future<void> registerAdminDeviceToken() async {
+  // Registrar token para cualquier usuario (admin o cliente)
+  Future<void> registerDeviceToken() async {
     try {
       final user = _auth.currentUser;
       if (user == null) return;
 
-      // Verificar si el usuario es admin
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      if (!userDoc.exists || userDoc.data()?['role'] != 'admin') return;
-
-      final String? token = await getDeviceToken();
+      final token = await _messaging.getToken();
       if (token == null) return;
 
-      // Guardar el token en la colección de admins
-      await _firestore.collection('admins').doc(user.uid).set({
-        'deviceToken': token,
-        'lastUpdated': FieldValue.serverTimestamp(),
-        'userId': user.uid,
-        'email': user.email,
-      }, SetOptions(merge: true));
-
+      // Primero verificamos si es admin
+      final adminDoc = await _firestore.collection('admins').doc(user.uid).get();
+      if (adminDoc.exists) {
+        // Es un admin, guardar en la colección de admins
+        await _firestore
+            .collection('admins')
+            .doc(user.uid)
+            .collection('tokens')
+            .doc(token)
+            .set({
+          'token': token,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // Es un cliente, guardar en la colección de users
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('tokens')
+            .doc(token)
+            .set({
+          'token': token,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
     } catch (e) {
       print('Error al registrar el token del dispositivo: $e');
     }
@@ -73,24 +86,41 @@ class DeviceTokenService {
     }
   }
 
-  // Obtener todos los tokens de dispositivo de los administradores
+  // Obtener tokens de administradores
   Future<List<String>> getAllAdminDeviceTokens() async {
     try {
-      final QuerySnapshot adminDocs = await _firestore
+      final adminTokens = await _firestore
           .collection('admins')
           .get();
-
-      List<String> allTokens = [];
-      for (var adminDoc in adminDocs.docs) {
-        final data = adminDoc.data() as Map<String, dynamic>;
-        final String? token = data['deviceToken'] as String?;
-        if (token != null) {
-          allTokens.add(token);
-        }
+      
+      List<String> tokens = [];
+      
+      for (var admin in adminTokens.docs) {
+        final tokenDocs = await admin.reference.collection('tokens').get();
+        tokens.addAll(tokenDocs.docs.map((doc) => doc.data()['token'] as String));
       }
-      return allTokens;
+      
+      return tokens;
     } catch (e) {
-      print('Error al obtener los tokens de administrador: $e');
+      print('Error al obtener tokens de administradores: $e');
+      return [];
+    }
+  }
+
+  // Obtener tokens de un cliente específico
+  Future<List<String>> getUserDeviceTokens(String userId) async {
+    try {
+      final tokenDocs = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('tokens')
+          .get();
+      
+      return tokenDocs.docs
+          .map((doc) => doc.data()['token'] as String)
+          .toList();
+    } catch (e) {
+      print('Error al obtener tokens del usuario: $e');
       return [];
     }
   }

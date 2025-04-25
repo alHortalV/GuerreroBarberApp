@@ -11,45 +11,115 @@ import 'background_tasks.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
+import 'package:guerrero_barber_app/services/connectivity_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-Future<void> main() async {
+Future<void> initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializar Supabase primero
-  await Supabase.initialize(
+  try {
+    // Inicializar Supabase primero
+    await Supabase.initialize(
       url: 'https://sevejjaoodnjhzrjthuv.supabase.co',
       anonKey:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNldmVqamFvb2Ruamh6cmp0aHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MTE1MDQsImV4cCI6MjA2MTA4NzUwNH0.jCaLdbclZ567DHxFlSK1_Aadrry6hdxT4m8p_U8IO_I');
+          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNldmVqamFvb2Ruamh6cmp0aHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MTE1MDQsImV4cCI6MjA2MTA4NzUwNH0.jCaLdbclZ567DHxFlSK1_Aadrry6hdxT4m8p_U8IO_I'
+    );
 
-  // Inicializar Firebase después
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+    // Inicializar Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
 
-  // Solicitar permisos necesarios
-  if (Platform.isAndroid) {
-    await Permission.notification.request();
-    await Permission.scheduleExactAlarm.request();
+    // Solicitar permisos en Android
+    if (Platform.isAndroid) {
+      await Permission.notification.request();
+      await Permission.scheduleExactAlarm.request();
+    }
+
+    // Inicializar notificaciones
+    final notificationsService = NotificationsService();
+    if (!notificationsService.isInitialized) {
+      await notificationsService.initNotification();
+    }
+
+    // Inicializar AndroidAlarmManager
+    await AndroidAlarmManager.initialize();
+
+    // Programar tarea periódica
+    await AndroidAlarmManager.periodic(
+      const Duration(hours: 1),
+      0,
+      NotificationsService.checkPendingAppointments,
+      exact: true,
+      wakeup: true,
+      rescheduleOnReboot: true,
+    );
+  } catch (e) {
+    print('Error durante la inicialización: $e');
+    rethrow;
   }
+}
 
-  // Inicializar el servicio de notificaciones
-  await NotificationsService().initNotification();
+void main() async {
+  try {
+    await initializeApp();
+    runApp(const MyApp());
+  } catch (e) {
+    print('Error al iniciar la aplicación: $e');
+    runApp(ErrorApp(error: e.toString()));
+  }
+}
 
-  // Inicializar AndroidAlarmManager
-  await AndroidAlarmManager.initialize();
+class ErrorApp extends StatelessWidget {
+  final String error;
 
-  // Programa la tarea periódica: se ejecuta cada 1 minuto
-  await AndroidAlarmManager.periodic(
-    const Duration(minutes: 1),
-    0, // ID único para la tarea
-    checkAppointmentsCallback,
-    wakeup: true,
-    rescheduleOnReboot: true,
-  );
+  const ErrorApp({super.key, required this.error});
 
-  runApp(const MyApp());
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              const Text(
+                'Error al iniciar la aplicación',
+                style: TextStyle(fontSize: 20),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await initializeApp();
+                    if (context.mounted) {
+                      runApp(const MyApp());
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString())),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Reintentar'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {

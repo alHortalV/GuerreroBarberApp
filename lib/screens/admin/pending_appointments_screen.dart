@@ -89,14 +89,23 @@ class PendingAppointmentsScreen extends StatelessWidget {
 
       // Enviar notificación al cliente
       final dateTime = DateTime.parse(appointmentData['dateTime']);
-      final userId = appointmentData['userId'];
+      final userToken = appointmentData['userToken'];
       
-      if (userId != null) {
+      if (userToken != null) {
         final notificationsService = NotificationsService();
-        await notificationsService.notifyAppointmentAccepted(
-          userId: userId,
-          appointmentTime: dateTime,
+        final String formattedDate = "${dateTime.day}/${dateTime.month}/${dateTime.year}";
+        final String formattedTime = "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+        
+        const title = "¡Cita Confirmada!";
+        final body = "Tu cita para el $formattedDate a las $formattedTime ha sido confirmada";
+
+        await notificationsService.sendNotification(
+          token: userToken,
+          title: title,
+          body: body,
         );
+      } else {
+        print('No se encontró token para el usuario ${appointmentData['userEmail']}');
       }
 
       if (context.mounted) {
@@ -115,6 +124,9 @@ class PendingAppointmentsScreen extends StatelessWidget {
 
   Future<void> _rejectAppointment(BuildContext context, String appointmentId, Map<String, dynamic> appointmentData) async {
     try {
+      final dateTime = DateTime.parse(appointmentData['dateTime']);
+      final userToken = appointmentData['userToken'];
+
       // Eliminar la cita
       await FirebaseFirestore.instance
           .collection('appointments')
@@ -122,13 +134,19 @@ class PendingAppointmentsScreen extends StatelessWidget {
           .delete();
 
       // Enviar notificación al cliente
-      final dateTime = DateTime.parse(appointmentData['dateTime']);
-      await NotificationsService().showNotification(
-        title: 'Cita no disponible',
-        body: 'Lo sentimos, tu cita para el ${DateFormat('EEEE d MMMM', 'es_ES').format(dateTime)} a las ${DateFormat('HH:mm').format(dateTime)} no está disponible.',
-        appointmentTime: dateTime,
-        scheduledTime: DateTime.now(),
-      );
+      if (userToken != null) {
+        final notificationsService = NotificationsService();
+        final title = 'Cita no disponible';
+        final body = 'Lo sentimos, tu cita para el ${DateFormat('EEEE d MMMM', 'es_ES').format(dateTime)} a las ${DateFormat('HH:mm').format(dateTime)} no está disponible.';
+
+        await notificationsService.sendNotification(
+          token: userToken,
+          title: title,
+          body: body,
+        );
+      } else {
+        print('No se encontró token para el usuario ${appointmentData['userEmail']}');
+      }
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

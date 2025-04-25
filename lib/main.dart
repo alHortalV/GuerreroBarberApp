@@ -7,11 +7,9 @@ import 'package:guerrero_barber_app/screens/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:guerrero_barber_app/theme/theme.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
-import 'background_tasks.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
-import 'package:guerrero_barber_app/services/connectivity_service.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -33,8 +31,13 @@ Future<void> initializeApp() async {
 
     // Solicitar permisos en Android
     if (Platform.isAndroid) {
-      await Permission.notification.request();
-      await Permission.scheduleExactAlarm.request();
+      final notificationStatus = await Permission.notification.request();
+      final alarmStatus = await Permission.scheduleExactAlarm.request();
+      
+      if (notificationStatus.isDenied || alarmStatus.isDenied) {
+        print('Permisos de notificación o alarma denegados');
+        // Aquí podrías mostrar un diálogo explicando por qué se necesitan los permisos
+      }
     }
 
     // Inicializar notificaciones

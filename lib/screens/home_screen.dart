@@ -2,10 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import 'package:guerrero_barber_app/screens/screen.dart';
+import 'package:guerrero_barber_app/screens/settings_screen.dart';
+import 'package:guerrero_barber_app/screens/calendar_screen.dart' hide Appointment;
+import 'package:guerrero_barber_app/screens/admin/pending_appointments_screen.dart';
+import 'package:guerrero_barber_app/screens/appointment_status_screen.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
 import 'package:guerrero_barber_app/services/device_token_service.dart';
 import 'package:guerrero_barber_app/services/supabase_service.dart';
+import 'package:guerrero_barber_app/models/appointment.dart';
 import 'package:intl/intl.dart';
 import '../global_keys.dart';
 
@@ -493,107 +497,88 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
   }
 
   Future<void> _submitAppointment() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      _formKey.currentState?.save();
+    try {
+      if (_formKey.currentState?.validate() ?? false) {
+        _formKey.currentState?.save();
 
-      if (selectedDate == null || selectedTime == null) {
-        if (mounted) {
+        if (selectedDate == null || selectedTime == null || haircut.isEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Seleccione día y hora")),
+            const SnackBar(content: Text('Por favor completa todos los campos')),
           );
-        }
-        return;
-      }
-
-      // Validar día
-      if (selectedDate!.weekday == DateTime.monday ||
-          selectedDate!.weekday == DateTime.sunday) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content:
-                    Text('Los lunes y domingos el peluquero está cerrado.')),
-          );
-        }
-        return;
-      }
-
-      setState(() {
-        _isLoading = true;
-      });
-
-      final appointmentDateTime = DateTime(
-        selectedDate!.year,
-        selectedDate!.month,
-        selectedDate!.day,
-        selectedTime!.hour,
-        selectedTime!.minute,
-      );
-
-      try {
-        final snapshot = await FirebaseFirestore.instance
-            .collection("appointments")
-            .where('dateTime', isEqualTo: appointmentDateTime.toIso8601String())
-            .get();
-
-        if (snapshot.docs.isNotEmpty) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('El horario ya está reservado.')),
-            );
-          }
-          setState(() => _isLoading = false);
           return;
         }
 
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('No autorizado')),
-            );
-          }
-          setState(() => _isLoading = false);
-          return;
+        setState(() {
+          _isLoading = true;
+        });
+
+        // Obtener el token del dispositivo
+        final String? deviceToken = await DeviceTokenService().getDeviceToken();
+        if (deviceToken == null) {
+          print('No se pudo obtener el token del dispositivo');
+          // Continuar con la creación de la cita, pero registrar que no hay token
         }
 
-        final newAppointmentRef =
-            FirebaseFirestore.instance.collection("appointments").doc();
-        await newAppointmentRef.set({
-          'id': newAppointmentRef.id,
-          'userEmail': user.email,
-          'userId': user.uid,
-          'dateTime': appointmentDateTime.toIso8601String(),
-          'service': haircut,
-          'notes': "",
+        final DateTime appointmentDateTime = DateTime(
+          selectedDate!.year,
+          selectedDate!.month,
+          selectedDate!.day,
+          selectedTime!.hour,
+          selectedTime!.minute,
+        );
+
+        // Generar un ID único para la cita
+        final String appointmentId = FirebaseFirestore.instance.collection('appointments').doc().id;
+
+        final appointment = Appointment(
+          id: appointmentId,
+          userId: FirebaseAuth.instance.currentUser!.uid,
+          dateTime: appointmentDateTime,
+          service: haircut,
+          notes: '',
+        );
+
+        await FirebaseFirestore.instance
+            .collection('appointments')
+            .doc(appointmentId)
+            .set({
+          ...appointment.toMap(),
+          'userEmail': FirebaseAuth.instance.currentUser!.email,
           'status': 'pending',
+          'userToken': deviceToken ?? '', // Usar string vacío si no hay token
           'notificationScheduled': true,
         });
 
-        // Enviar notificación a los administradores
-        final notificationsService = NotificationsService();
-        await notificationsService.notifyPendingAppointment();
+        // Enviar notificación al administrador
+        await NotificationsService().notifyPendingAppointment();
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text(
-                    'Cita registrada. Pendiente de aprobación por el administrador.')),
-          );
-
-          // Limpia el formulario
-          clearForm();
-        }
-
-        setState(() => _isLoading = false);
-      } catch (error) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $error')),
+              content: Text('Cita solicitada con éxito'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
-        setState(() => _isLoading = false);
+
+        clearForm();
+        setState(() {
+          _isLoading = false;
+        });
       }
+    } catch (e) {
+      print('Error al crear la cita: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al crear la cita. Por favor intenta de nuevo.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 

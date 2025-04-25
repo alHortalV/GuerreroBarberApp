@@ -26,30 +26,45 @@ class DeviceTokenService {
       final token = await _messaging.getToken();
       if (token == null) return;
 
-      // Primero verificamos si es admin
-      final adminDoc = await _firestore.collection('admins').doc(user.uid).get();
-      if (adminDoc.exists) {
-        // Es un admin, guardar en la colección de admins
+      // Verificar si el email corresponde a un admin
+      final adminQuery = await _firestore
+          .collection('admins')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      if (adminQuery.docs.isNotEmpty) {
+        // Es un admin, guardar el token en su documento
+        final adminDoc = adminQuery.docs.first;
         await _firestore
             .collection('admins')
-            .doc(user.uid)
-            .collection('tokens')
-            .doc(token)
-            .set({
-          'token': token,
-          'createdAt': FieldValue.serverTimestamp(),
+            .doc(adminDoc.id) // Este es el UID del admin
+            .update({
+          'deviceTokens': FieldValue.arrayUnion([token]), // Agregar el token al array
+          'lastDeviceToken': token,
+          'lastTokenUpdate': FieldValue.serverTimestamp(),
         });
+        print('Token registrado para admin ${adminDoc.id} (${user.email}): $token');
       } else {
         // Es un cliente, guardar en la colección de users
-        await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .collection('tokens')
-            .doc(token)
-            .set({
-          'token': token,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+        await Future.wait([
+          _firestore
+              .collection('users')
+              .doc(user.uid)
+              .collection('tokens')
+              .doc(token)
+              .set({
+            'token': token,
+            'createdAt': FieldValue.serverTimestamp(),
+          }),
+          _firestore
+              .collection('users')
+              .doc(user.uid)
+              .update({
+            'lastDeviceToken': token,
+            'lastTokenUpdate': FieldValue.serverTimestamp(),
+          })
+        ]);
+        print('Token registrado para usuario ${user.uid}: $token');
       }
     } catch (e) {
       print('Error al registrar el token del dispositivo: $e');
@@ -57,18 +72,107 @@ class DeviceTokenService {
   }
 
   // Eliminar el token del dispositivo actual
-  Future<void> removeAdminDeviceToken() async {
+  Future<void> removeDeviceToken() async {
     try {
       final user = _auth.currentUser;
       if (user == null) return;
 
-      // Verificar si existe el documento del admin
-      final adminDoc = await _firestore.collection('admins').doc(user.uid).get();
-      if (adminDoc.exists) {
-        await _firestore.collection('admins').doc(user.uid).delete();
+      final token = await _messaging.getToken();
+      if (token == null) return;
+
+      // Verificar si es admin
+      final adminQuery = await _firestore
+          .collection('admins')
+          .where('email', isEqualTo: user.email)
+          .get();
+
+      if (adminQuery.docs.isNotEmpty) {
+        // Es un admin, eliminar el token del array
+        final adminDoc = adminQuery.docs.first;
+        await _firestore
+            .collection('admins')
+            .doc(adminDoc.id)
+            .update({
+          'deviceTokens': FieldValue.arrayRemove([token]),
+        });
+        
+        // Si era el último token activo, también limpiarlo
+        final currentData = await _firestore
+            .collection('admins')
+            .doc(adminDoc.id)
+            .get();
+            
+        if (currentData.data()?['lastDeviceToken'] == token) {
+          await _firestore
+              .collection('admins')
+              .doc(adminDoc.id)
+              .update({
+            'lastDeviceToken': null,
+            'lastTokenUpdate': null,
+          });
+        }
+      } else {
+        // Es un cliente, eliminar el token
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('tokens')
+            .doc(token)
+            .delete();
+
+        // También limpiar el último token si coincide
+        final userDoc = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .get();
+            
+        if (userDoc.data()?['lastDeviceToken'] == token) {
+          await _firestore
+              .collection('users')
+              .doc(user.uid)
+              .update({
+            'lastDeviceToken': null,
+            'lastTokenUpdate': null,
+          });
+        }
       }
     } catch (e) {
       print('Error al eliminar el token del dispositivo: $e');
+    }
+  }
+
+  // Limpiar tokens antiguos (más de 30 días)
+  Future<void> cleanupOldTokens() async {
+    try {
+      final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
+      
+      // Limpiar tokens antiguos de administradores
+      final adminDocs = await _firestore.collection('admins').get();
+      for (var adminDoc in adminDocs.docs) {
+        final tokenDocs = await adminDoc.reference
+            .collection('tokens')
+            .where('createdAt', isLessThan: thirtyDaysAgo)
+            .get();
+        
+        for (var tokenDoc in tokenDocs.docs) {
+          await tokenDoc.reference.delete();
+        }
+      }
+
+      // Limpiar tokens antiguos de usuarios
+      final userDocs = await _firestore.collection('users').get();
+      for (var userDoc in userDocs.docs) {
+        final tokenDocs = await userDoc.reference
+            .collection('tokens')
+            .where('createdAt', isLessThan: thirtyDaysAgo)
+            .get();
+        
+        for (var tokenDoc in tokenDocs.docs) {
+          await tokenDoc.reference.delete();
+        }
+      }
+    } catch (e) {
+      print('Error al limpiar tokens antiguos: $e');
     }
   }
 
@@ -89,18 +193,29 @@ class DeviceTokenService {
   // Obtener tokens de administradores
   Future<List<String>> getAllAdminDeviceTokens() async {
     try {
-      final adminTokens = await _firestore
-          .collection('admins')
-          .get();
-      
+      final adminDocs = await _firestore.collection('admins').get();
       List<String> tokens = [];
       
-      for (var admin in adminTokens.docs) {
-        final tokenDocs = await admin.reference.collection('tokens').get();
-        tokens.addAll(tokenDocs.docs.map((doc) => doc.data()['token'] as String));
+      for (var adminDoc in adminDocs.docs) {
+        final adminData = adminDoc.data();
+        
+        // Obtener todos los tokens del array deviceTokens
+        if (adminData.containsKey('deviceTokens')) {
+          final deviceTokens = List<String>.from(adminData['deviceTokens'] ?? []);
+          tokens.addAll(deviceTokens);
+        }
+        
+        // Obtener el último token si existe y no está en el array
+        if (adminData.containsKey('lastDeviceToken')) {
+          final lastToken = adminData['lastDeviceToken'] as String;
+          if (!tokens.contains(lastToken)) {
+            tokens.add(lastToken);
+          }
+        }
       }
       
-      return tokens;
+      print('Tokens de administradores encontrados: ${tokens.length}');
+      return tokens.toSet().toList(); // Eliminar duplicados
     } catch (e) {
       print('Error al obtener tokens de administradores: $e');
       return [];
@@ -122,6 +237,20 @@ class DeviceTokenService {
     } catch (e) {
       print('Error al obtener tokens del usuario: $e');
       return [];
+    }
+  }
+
+  // Obtener el último token de un usuario específico
+  Future<String?> getUserLastDeviceToken(String userId) async {
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (!userDoc.exists) return null;
+      
+      final data = userDoc.data() as Map<String, dynamic>;
+      return data['lastDeviceToken'] as String?;
+    } catch (e) {
+      print('Error al obtener el último token del usuario: $e');
+      return null;
     }
   }
 } 

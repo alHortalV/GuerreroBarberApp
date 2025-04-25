@@ -189,17 +189,23 @@ class _AuthScreenState extends State<AuthScreen>
         if (isAdmin) {
           // Si es administrador, registrar el token del dispositivo
           await DeviceTokenService().registerDeviceToken();
-          ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
-            SnackBar(content: Text('Bienvenido Administrador')),
-          );
-          Navigator.of(mounted ? context : context).pushReplacement(
-              MaterialPageRoute(builder: (_) => AdminPanel())); // Asegúrate de tener implementada AdminPanelScreen
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Bienvenido Administrador')),
+            );
+            Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => AdminPanel()));
+          }
         } else {
-          ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
-            SnackBar(content: Text('Bienvenido de nuevo $username')),
-          );
-          Navigator.of(mounted ? context : context)
-              .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+          // También registrar el token para usuarios normales
+          await DeviceTokenService().registerDeviceToken();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Bienvenido de nuevo $username')),
+            );
+            Navigator.of(context)
+                .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+          }
         }
       } else {
         userCredential = await _auth.createUserWithEmailAndPassword(

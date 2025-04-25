@@ -17,11 +17,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   String userRole = 'cliente';
+  String? _profileImageUrl;
   int _currentIndex = 0;
   final PageController _pageController = PageController(initialPage: 0);
   final GlobalKey<_BookAppointmentWidgetState> _bookAppointmentKey =
       GlobalKey<_BookAppointmentWidgetState>();
-  String? _profileImageUrl;
   String? _username;
 
   @override
@@ -29,6 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkUserRole();
     _loadUserData();
+    _loadProfileImage();
   }
 
   Future<void> _loadUserData() async {
@@ -73,6 +74,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadProfileImage() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && mounted) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      if (userDoc.exists) {
+        setState(() {
+          _profileImageUrl = userDoc.data()?['profileImageUrl'];
+        });
+      }
+    }
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -81,33 +97,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onTabTapped(int index) {
     if (index >= 0 && index < (userRole == 'admin' ? 4 : 4)) {
-      setState(() {
-        _currentIndex = index;
-      });
-      _pageController.jumpToPage(index);
-      if (index != 1) {
-        _bookAppointmentKey.currentState?.clearForm();
+    setState(() {
+      _currentIndex = index;
+    });
+    _pageController.jumpToPage(index);
+    if (index != 1) {
+      _bookAppointmentKey.currentState?.clearForm();
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> navigationItems = [
-      const Icon(Icons.list, size: 30, color: Colors.white),
-      const Icon(Icons.add, size: 30, color: Colors.white),
-      const Icon(Icons.calendar_today, size: 30, color: Colors.white),
-      Icon(
-        userRole == 'admin' ? Icons.admin_panel_settings : Icons.pending_actions,
-        size: 30,
-        color: Colors.white,
-      ),
-    ];
-
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async => false,
+      child: Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.blue,
+          automaticallyImplyLeading: false,
         title: const Text(
           'Guerrero Barber',
           style: TextStyle(
@@ -115,13 +123,15 @@ class _HomeScreenState extends State<HomeScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
+        
         actions: [
-          if (userRole != 'admin')
-            GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(
+          GestureDetector(
+              onTap: () async {
+                await Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 );
+                // Recargar la imagen de perfil cuando regrese del SettingsScreen
+                _loadProfileImage();
               },
               child: Container(
                 margin: const EdgeInsets.only(right: 8),
@@ -137,49 +147,44 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-          IconButton(
-            icon: const Icon(Icons.exit_to_app, color: Colors.white),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Sesión cerrada')),
-                );
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => const AuthScreen()),
-                );
-              }
-            },
-          ),
         ],
       ),
       body: PageView(
         controller: _pageController,
         onPageChanged: (index) {
-          if (index >= 0 && index < (userRole == 'admin' ? 4 : 4)) {
-            setState(() {
-              _currentIndex = index;
-            });
-          }
-        },
-        children: [
-          const AppointmentsList(),
-          const BookAppointmentWidget(),
-          const CalendarScreen(),
-          if (userRole == 'admin')
-            const PendingAppointmentsScreen()
-          else
-            const AppointmentStatusScreen(),
+            if (index >= 0 && index < (userRole == 'admin' ? 4 : 4)) {
+          setState(() {
+            _currentIndex = index;
+          });
+            }
+          },
+          children: [
+            const AppointmentsList(),
+            const BookAppointmentWidget(),
+            const CalendarScreen(),
+            if (userRole == 'admin')
+              const PendingAppointmentsScreen()
+            else
+              const AppointmentStatusScreen(),
         ],
       ),
       bottomNavigationBar: CurvedNavigationBar(
-        key: const Key('bottomNav'),
         index: _currentIndex,
         backgroundColor: Colors.transparent,
         color: Colors.blue,
         buttonBackgroundColor: Colors.redAccent,
-        items: navigationItems,
+          items: [
+            const Icon(Icons.list, size: 30, color: Colors.white),
+            const Icon(Icons.add, size: 30, color: Colors.white),
+            const Icon(Icons.calendar_today, size: 30, color: Colors.white),
+            Icon(
+              userRole == 'admin' ? Icons.admin_panel_settings : Icons.pending_actions,
+              size: 30,
+              color: Colors.white,
+            ),
+        ],
         onTap: _onTabTapped,
+        ),
       ),
     );
   }
@@ -477,7 +482,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
     }
   }
 
-  void _submitAppointment() async {
+  Future<void> _submitAppointment() async {
     if (_formKey.currentState?.validate() ?? false) {
       _formKey.currentState?.save();
 
@@ -542,41 +547,23 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           return;
         }
 
-        // Obtener el username del usuario
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-        
-        final username = userDoc.data()?['username'] ?? user.email;
-
         final newAppointmentRef =
             FirebaseFirestore.instance.collection("appointments").doc();
         await newAppointmentRef.set({
           'id': newAppointmentRef.id,
           'userEmail': user.email,
-          'username': username,
           'dateTime': appointmentDateTime.toIso8601String(),
           'service': haircut,
           'notes': "",
-          'status': "pending",
+          'status': 'pending',
           'notificationScheduled': true,
         });
 
-        // Notificar al administrador sobre la nueva cita pendiente
-        final adminSnapshot =
-            await FirebaseFirestore.instance.collection('admins').get();
-
-        // ignore: unused_local_variable
-        for (var adminDoc in adminSnapshot.docs) {
-          // Enviar notificación a cada administrador
-          await NotificationsService().showNotification(
-            title: 'Nueva cita pendiente',
-            body: 'Tienes una nueva cita pendiente de aprobación',
-            appointmentTime: appointmentDateTime,
-            scheduledTime: DateTime.now(),
-          );
-        }
+        // Enviar notificación solo a los administradores
+        await NotificationsService().sendAdminNotification(
+          title: 'Nueva cita pendiente',
+          body: 'Tienes una nueva cita pendiente de aprobación',
+        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

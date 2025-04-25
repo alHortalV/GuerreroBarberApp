@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -36,11 +37,43 @@ class _SplashScreenState extends State<SplashScreen>
       end: Colors.blue, // azul para contraste
     ).animate(_animationController);
 
-    // Después de unos segundos, pasamos al inicio de sesión
-    Timer(const Duration(seconds: 5), () {
-      Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const AuthScreen()));
+    // Verificar si hay una sesión activa después de unos segundos
+    Timer(const Duration(seconds: 3), () {
+      _checkAuthState();
     });
+  }
+
+  Future<void> _checkAuthState() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // El usuario está autenticado, verificar si es admin
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      
+      if (userDoc.exists) {
+        final role = userDoc.data()?['role'];
+        if (mounted) {
+          if (role == 'admin') {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const AdminPanel()),
+            );
+          } else {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const HomeScreen()),
+            );
+          }
+        }
+      }
+    } else {
+      // No hay sesión activa, ir a la pantalla de autenticación
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const AuthScreen()),
+        );
+      }
+    }
   }
 
   @override
@@ -68,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Icono alusivo a la barbería
-                  Icon(
+                  const Icon(
                     Icons.content_cut,
                     size: 100,
                     color: Colors.red, // acento típico de peluquería

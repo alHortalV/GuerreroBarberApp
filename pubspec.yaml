@@ -25,7 +25,9 @@ dependencies:
   timeline_tile: ^2.0.0
   image_picker: ^1.0.7
   supabase_flutter: ^2.3.4
-  app_links: ^3.5.0
+  app_links: ^6.4.0
+  firebase_messaging: ^15.2.5
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
@@ -34,3 +36,4 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:dynamic_background/dynamic_background.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
+import 'package:guerrero_barber_app/services/device_token_service.dart';
 
 
 class AuthScreen extends StatefulWidget {
@@ -29,6 +30,7 @@ class _AuthScreenState extends State<AuthScreen>
   bool _obscureConfirmPassword = true;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -185,12 +187,13 @@ class _AuthScreenState extends State<AuthScreen>
           }
         }
         if (isAdmin) {
+          // Si es administrador, registrar el token del dispositivo
+          await DeviceTokenService().registerAdminDeviceToken();
           ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
             SnackBar(content: Text('Bienvenido Administrador')),
           );
-          Navigator.of(mounted ? context : context).pushReplacement(MaterialPageRoute(
-              builder: (_) =>
-                  AdminPanel())); // Asegúrate de tener implementada AdminPanelScreen
+          Navigator.of(mounted ? context : context).pushReplacement(
+              MaterialPageRoute(builder: (_) => AdminPanel())); // Asegúrate de tener implementada AdminPanelScreen
         } else {
           ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
             SnackBar(content: Text('Bienvenido de nuevo $username')),

@@ -1,27 +1,32 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzData;
-import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:guerrero_barber_app/services/device_token_service.dart';
 
 class NotificationsService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final DeviceTokenService _deviceTokenService = DeviceTokenService();
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
   Future<void> initNotification() async {
     if (_isInitialized) return;
 
-    // Inicializa las zonas horarias.
+    // Inicializa las zonas horarias
     tzData.initializeTimeZones();
 
-    const androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    // Configuración para Android
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    
+    // Configuración para iOS
     const initSettingsIOS = DarwinInitializationSettings(
       requestAlertPermission: true,
       requestBadgePermission: true,
       requestSoundPermission: true,
     );
+
     const settings = InitializationSettings(
       android: androidSettings,
       iOS: initSettingsIOS,
@@ -29,7 +34,10 @@ class NotificationsService {
 
     await flutterLocalNotificationsPlugin.initialize(settings);
 
-    // Solicita permisos en iOS.
+    // Configurar Firebase Messaging para notificaciones en segundo plano
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Solicitar permisos para iOS
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin>()
@@ -42,23 +50,32 @@ class NotificationsService {
     _isInitialized = true;
   }
 
-  NotificationDetails notificationDetails() {
-    return const NotificationDetails(
-      android: AndroidNotificationDetails(
-        'daily_channel id',
-        'Daily Notifications',
-        channelDescription: 'Daily Notification Channel',
-        importance: Importance.max,
-        priority: Priority.high,
-        playSound: true,
-        enableVibration: true,
-      ),
-      iOS: DarwinNotificationDetails(
-        presentAlert: true,
-        presentBadge: true,
-        presentSound: true,
-      ),
-    );
+  // Manejador de mensajes en segundo plano
+  static Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+    print('Handling a background message: ${message.messageId}');
+  }
+
+  // Enviar notificación a todos los dispositivos de administrador
+  Future<void> sendAdminNotification({
+    required String title,
+    required String body,
+  }) async {
+    try {
+      final List<String> adminTokens = await _deviceTokenService.getAllAdminDeviceTokens();
+      
+      for (String token in adminTokens) {
+        await FirebaseMessaging.instance.sendMessage(
+          to: token,
+          data: {
+            'title': title,
+            'body': body,
+            'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+          },
+        );
+      }
+    } catch (e) {
+      print('Error al enviar notificación a administradores: $e');
+    }
   }
 
   Future<void> scheduleNotification({
@@ -67,36 +84,14 @@ class NotificationsService {
     required String body,
     required DateTime scheduledTime,
   }) async {
-    // Convertir scheduledTime a TZDateTime usando la zona local
-    tz.TZDateTime tzScheduledTime = tz.TZDateTime.from(scheduledTime, tz.local);
-    final now = tz.TZDateTime.now(tz.local);
-
-    // Si el scheduledTime ya pasó, ajustarlo para programarlo unos segundos en el futuro
-    if (tzScheduledTime.isBefore(now)) {
-      tzScheduledTime = now.add(const Duration(seconds: 5));
-    }
-
-    // Programar la notificación usando AndroidAlarmManager para mayor confiabilidad
-    await AndroidAlarmManager.oneShotAt(
-      tzScheduledTime,
-      id,
-      _showNotification,
-      exact: true,
-      wakeup: true,
-      rescheduleOnReboot: true,
-      params: {
-        'title': title,
-        'body': body,
-      },
-    );
-
-    // También programar con flutter_local_notifications como respaldo
+    final tzDateTime = tz.TZDateTime.from(scheduledTime, tz.local);
+    
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,
       body,
-      tzScheduledTime,
-      const NotificationDetails(
+      tzDateTime,
+      NotificationDetails(
         android: AndroidNotificationDetails(
           'citas_channel',
           'Recordatorios de Citas',
@@ -107,19 +102,18 @@ class NotificationsService {
           playSound: true,
         ),
       ),
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
   }
 
-  @pragma('vm:entry-point')
-  static Future<void> _showNotification(int id, Map<String, dynamic>? params) async {
-    if (params == null) return;
-
-    final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-        FlutterLocalNotificationsPlugin();
-    
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
+  // Método para mostrar notificación inmediata
+  Future<void> showNotification({
+    required String title,
+    required String body,
+    required DateTime appointmentTime,
+    required DateTime scheduledTime,
+  }) async {
+    const androidDetails = AndroidNotificationDetails(
       'citas_channel',
       'Recordatorios de Citas',
       channelDescription: 'Notificaciones programadas para recordar citas',
@@ -129,30 +123,13 @@ class NotificationsService {
       playSound: true,
     );
 
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    const platformDetails = NotificationDetails(android: androidDetails);
 
     await flutterLocalNotificationsPlugin.show(
-      id,
-      params['title'] as String,
-      params['body'] as String,
-      platformChannelSpecifics,
-    );
-  }
-
-  // Si sigues usando showNotification para el background task, lo mantienes
-  Future<void> showNotification({
-    required DateTime appointmentTime,
-    required DateTime scheduledTime,
-    required String title,
-    required String body,
-  }) async {
-    // Puedes llamar a scheduleNotification usando una id generada, por ejemplo:
-    await scheduleNotification(
-      id: appointmentTime.hashCode, // O usa otra lógica de id
-      title: title,
-      body: body,
-      scheduledTime: scheduledTime,
+      appointmentTime.hashCode,
+      title,
+      body,
+      platformDetails,
     );
   }
 }

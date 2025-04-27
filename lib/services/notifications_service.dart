@@ -8,6 +8,7 @@ import 'dart:convert';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:guerrero_barber_app/config/firebase_config.dart';
 import 'package:guerrero_barber_app/services/oauth2_service.dart';
+import 'package:flutter/material.dart';
 
 class NotificationsService {
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -17,6 +18,15 @@ class NotificationsService {
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
   
+  BuildContext? _context;
+
+  // Constructor que acepta un BuildContext opcional
+  NotificationsService([this._context]);
+  
+  void updateContext(BuildContext context) {
+    _context = context;
+  }
+
   Future<void> initNotification() async {
     if (_isInitialized) return;
 
@@ -49,11 +59,28 @@ class NotificationsService {
       },
     );
 
+    // Crear el canal de notificaciones para Android
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      'citas_channel',
+      'Recordatorios de Citas',
+      description: 'Notificaciones de citas y actualizaciones',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+    );
+
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
     // Solicitar permisos de notificación
     await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
+      criticalAlert: true,
+      provisional: false,
     );
 
     // Configurar manejadores de mensajes de Firebase
@@ -78,18 +105,38 @@ class NotificationsService {
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     print('Mensaje recibido en primer plano: ${message.messageId}');
     
-    // Mostrar notificación local
-    await showNotification(
-      title: message.notification?.title ?? 'Nueva notificación',
-      body: message.notification?.body ?? '',
-      appointmentTime: DateTime.now(),
-      scheduledTime: DateTime.now(),
+    // Mostrar notificación push incluso en primer plano
+    await flutterLocalNotificationsPlugin.show(
+      message.hashCode,
+      message.notification?.title ?? 'Nueva notificación',
+      message.notification?.body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'citas_channel',
+          'Recordatorios de Citas',
+          channelDescription: 'Notificaciones de citas y actualizaciones',
+          importance: Importance.max,
+          priority: Priority.high,
+          enableVibration: true,
+          playSound: true,
+          icon: '@mipmap/ic_launcher',
+          largeIcon: const DrawableResourceAndroidBitmap('@mipmap/ic_launcher'),
+          channelShowBadge: true,
+          showWhen: true,
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
     );
   }
 
   // Manejador cuando se abre una notificación con la app en segundo plano
   Future<void> _handleMessageOpenedApp(RemoteMessage message) async {
     print('Notificación abierta desde segundo plano: ${message.messageId}');
+    // Aquí puedes agregar lógica adicional cuando se abre la app desde una notificación
   }
 
   // Manejador de mensajes en segundo plano
@@ -97,6 +144,8 @@ class NotificationsService {
   static Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
     await Firebase.initializeApp();
     print('Handling a background message: ${message.messageId}');
+    
+    // No es necesario mostrar la notificación aquí ya que Firebase lo hace automáticamente en segundo plano
   }
 
   // Enviar notificación a todos los dispositivos de administrador

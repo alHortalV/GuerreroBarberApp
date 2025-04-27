@@ -40,12 +40,6 @@ Future<void> initializeApp() async {
       }
     }
 
-    // Inicializar notificaciones
-    final notificationsService = NotificationsService();
-    if (!notificationsService.isInitialized) {
-      await notificationsService.initNotification();
-    }
-
     // Inicializar AndroidAlarmManager
     await AndroidAlarmManager.initialize();
 
@@ -125,8 +119,31 @@ class ErrorApp extends StatelessWidget {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  final NotificationsService _notificationsService = NotificationsService();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    try {
+      if (!_notificationsService.isInitialized) {
+        await _notificationsService.initNotification();
+      }
+    } catch (e) {
+      print('Error al inicializar las notificaciones: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -145,6 +162,10 @@ class MyApp extends StatelessWidget {
       theme: lightTheme,
       darkTheme: darkTheme,
       themeMode: ThemeMode.system,
+      builder: (context, child) {
+        _notificationsService.updateContext(context);
+        return child ?? const SizedBox.shrink();
+      },
       home: const SplashScreen(),
     );
   }

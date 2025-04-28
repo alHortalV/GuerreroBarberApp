@@ -5,3 +5,4 @@ export 'package:guerrero_barber_app/screens/home_screen.dart';
 export 'package:guerrero_barber_app/screens/appointment_status_screen.dart';
 export 'package:guerrero_barber_app/screens/admin/admin.dart';
 export 'package:guerrero_barber_app/screens/settings_screen.dart';
+export 'package:guerrero_barber_app/screens/info_screen.dart';

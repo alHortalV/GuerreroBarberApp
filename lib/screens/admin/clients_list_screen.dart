@@ -13,7 +13,6 @@ class ClientsListScreen extends StatelessWidget {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
           final clients = snapshot.data!.docs;
           return ListView.builder(
             itemCount: clients.length,

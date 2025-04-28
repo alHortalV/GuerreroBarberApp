@@ -30,7 +30,6 @@ class _AuthScreenState extends State<AuthScreen>
   bool _obscureConfirmPassword = true;
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -185,13 +184,14 @@ class _AuthScreenState extends State<AuthScreen>
           if (adminData['email'] == email) {
             isAdmin = true;
           }
+          username = adminData['username'] ?? '';
         }
         if (isAdmin) {
           // Si es administrador, registrar el token del dispositivo
           await DeviceTokenService().registerDeviceToken();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Bienvenido Administrador')),
+              SnackBar(content: Text('Bienvenido de nuevo, $username')),
             );
             Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => AdminPanel()));
@@ -201,7 +201,7 @@ class _AuthScreenState extends State<AuthScreen>
           await DeviceTokenService().registerDeviceToken();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Bienvenido de nuevo $username')),
+              SnackBar(content: Text('Bienvenido de nuevo, $username')),
             );
             Navigator.of(context)
                 .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));

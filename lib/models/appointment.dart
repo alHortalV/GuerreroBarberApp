@@ -4,13 +4,19 @@ class Appointment {
   final DateTime dateTime;
   final String service;
   final String? notes;
-
+  final String userEmail;
+  final String? username;
+  final String? status;
+  
   Appointment({
     required this.id,
     required this.userId,
     required this.dateTime,
     required this.service,
     this.notes,
+    required this.userEmail,
+    this.username,
+    this.status,
   });
 
   Map<String, dynamic> toMap() {
@@ -20,6 +26,9 @@ class Appointment {
       'dateTime': dateTime.toIso8601String(),
       'service': service,
       'notes': notes,
+      'userEmail': userEmail,
+      'username': username,
+      'status': status,
     };
   }
 
@@ -30,6 +39,9 @@ class Appointment {
       dateTime: DateTime.parse(map['dateTime']),
       service: map['service'] ?? '',
       notes: map['notes'],
+      userEmail: map['userEmail'] ?? '',
+      username: map['username'],
+      status: map['status'],
     );
   }
 }

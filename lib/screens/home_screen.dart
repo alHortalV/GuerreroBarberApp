@@ -2,14 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
-import 'package:guerrero_barber_app/screens/settings_screen.dart';
-import 'package:guerrero_barber_app/screens/calendar_screen.dart' hide Appointment;
-import 'package:guerrero_barber_app/screens/admin/pending_appointments_screen.dart';
-import 'package:guerrero_barber_app/screens/appointment_status_screen.dart';
-import 'package:guerrero_barber_app/services/notifications_service.dart';
-import 'package:guerrero_barber_app/services/device_token_service.dart';
-import 'package:guerrero_barber_app/services/supabase_service.dart';
+
+import 'package:guerrero_barber_app/screens/screen.dart';
+import 'package:guerrero_barber_app/screens/admin/admin.dart';
+
 import 'package:guerrero_barber_app/models/appointment.dart';
+import 'package:guerrero_barber_app/services/services.dart';
 import 'package:intl/intl.dart';
 import '../global_keys.dart';
 
@@ -123,8 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async => false,
+    return PopScope(
+      canPop: false,
       child: Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -247,6 +245,26 @@ class AppointmentsList extends StatelessWidget {
               final dateTime = DateTime.parse(data["dateTime"]);
               final formattedDate =
                   DateFormat('EEEE, d MMMM', 'es_ES').format(dateTime);
+              final status = data['status'] ?? 'pending';
+
+              // Si la cita está rechazada, la eliminamos de Firebase y no la mostramos
+              if (status == 'rejected') {
+                FirebaseFirestore.instance
+                    .collection("appointments")
+                    .doc(data['id'])
+                    .delete();
+                return const SizedBox.shrink();
+              }
+
+              Color cardColor;
+              if (status == 'pending') {
+                cardColor = Colors.orange.shade200;
+              } else if (status == 'approved') {
+                cardColor = Colors.green.shade200;
+              } else {
+                cardColor = Colors.grey.shade200;
+              }
+
               return Dismissible(
                 key: Key(data['id']),
                 direction: DismissDirection.endToStart,
@@ -270,7 +288,6 @@ class AppointmentsList extends StatelessWidget {
                       .collection("appointments")
                       .doc(data['id'])
                       .delete();
-                  // Usa navigatorKey.currentContext! para obtener un context activo
                   if (navigatorKey.currentContext != null) {
                     ScaffoldMessenger.of(navigatorKey.currentContext!)
                         .showSnackBar(
@@ -279,9 +296,9 @@ class AppointmentsList extends StatelessWidget {
                   }
                 },
                 child: Container(
-                  margin:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   child: Card(
+                    color: cardColor,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                     elevation: 2,
@@ -302,6 +319,21 @@ class AppointmentsList extends StatelessWidget {
                           ),
                           Text(
                             "A las ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}",
+                          ),
+                          Text(
+                            status == 'pending'
+                                ? 'Pendiente de confirmación'
+                                : (status == 'approved'
+                                    ? 'Confirmada'
+                                    : ''),
+                            style: TextStyle(
+                              color: status == 'pending'
+                                  ? Colors.orange[900]
+                                  : (status == 'approved'
+                                      ? Colors.green[900]
+                                      : Colors.black),
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
@@ -536,6 +568,8 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           dateTime: appointmentDateTime,
           service: haircut,
           notes: '',
+          userEmail: FirebaseAuth.instance.currentUser!.email!,
+          username: FirebaseAuth.instance.currentUser!.displayName,
         );
 
         await FirebaseFirestore.instance
@@ -544,6 +578,7 @@ class _BookAppointmentWidgetState extends State<BookAppointmentWidget> {
             .set({
           ...appointment.toMap(),
           'userEmail': FirebaseAuth.instance.currentUser!.email,
+          'username': FirebaseAuth.instance.currentUser!.displayName,
           'status': 'pending',
           'userToken': deviceToken ?? '', // Usar string vacío si no hay token
           'notificationScheduled': true,

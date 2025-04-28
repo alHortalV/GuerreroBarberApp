@@ -4,16 +4,15 @@ import 'package:guerrero_barber_app/models/appointment.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
-class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key});
+class CalendarAdminScreen extends StatefulWidget {
+  const CalendarAdminScreen({super.key});
 
   @override
-  _CalendarScreenState createState() => _CalendarScreenState();
+  State<CalendarAdminScreen> createState() => _CalendarAdminScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _CalendarAdminScreenState extends State<CalendarAdminScreen> {
   CalendarFormat _calendarFormat = CalendarFormat.month;
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
@@ -27,18 +26,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   void _loadAppointments() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-    final userEmail = user.email!;
-    // Calcula el inicio del día seleccionado (00:00 horas)
     final selectedDateStart = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-    // Definimos el fin del día seleccionado
     final endOfDay = selectedDateStart.add(const Duration(days: 1));
 
     final snapshot = await FirestoreService.firestore
         .collection('appointments')
-        .where('userEmail', isEqualTo: userEmail)
-        // Se buscan todas las citas del día seleccionado.
         .where('dateTime', isGreaterThanOrEqualTo: selectedDateStart.toIso8601String())
         .where('dateTime', isLessThan: endOfDay.toIso8601String())
         .orderBy('dateTime')
@@ -97,32 +89,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 onPageChanged: (focusedDay) {
                   _focusedDay = focusedDay;
                 },
-                calendarBuilders: CalendarBuilders(
-                  defaultBuilder: (context, day, focusedDay) {
-                    if (day.weekday == DateTime.monday ||
-                        day.weekday == DateTime.sunday) {
-                      return Center(
-                        child: Text(
-                          '${day.day}',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      );
-                    }
-                    return null;
-                  },
-                  outsideBuilder: (context, day, focusedDay) {
-                    if (day.weekday == DateTime.monday ||
-                        day.weekday == DateTime.sunday) {
-                      return Center(
-                        child: Text(
-                          '${day.day}',
-                          style: const TextStyle(color: Colors.red),
-                        ),
-                      );
-                    }
-                    return null;
-                  },
-                ),
+                // Sin calendarBuilders: colores por defecto
                 calendarStyle: const CalendarStyle(
                   isTodayHighlighted: true,
                   selectedDecoration: BoxDecoration(
@@ -139,17 +106,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                   formatButtonVisible: false,
                   formatButtonDecoration: BoxDecoration(
                     color: Colors.blue,
-                    borderRadius: BorderRadius.circular(20.0),
+                    borderRadius: BorderRadius.all(Radius.circular(20.0)),
                   ),
                   formatButtonTextStyle: const TextStyle(color: Colors.white),
                   titleTextFormatter: (date, locale) =>
                       DateFormat.yMMMM(locale).format(date).toUpperCase(),
-                  titleTextStyle:
-                      const TextStyle(color: Colors.blue, fontSize: 18),
-                  leftChevronIcon:
-                      const Icon(Icons.chevron_left, color: Colors.blue),
-                  rightChevronIcon:
-                      const Icon(Icons.chevron_right, color: Colors.blue),
+                  titleTextStyle: const TextStyle(color: Colors.blue, fontSize: 18),
+                  leftChevronIcon: const Icon(Icons.chevron_left, color: Colors.blue),
+                  rightChevronIcon: const Icon(Icons.chevron_right, color: Colors.blue),
                 ),
               ),
             ),
@@ -180,10 +144,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
           elevation: 2,
           child: ListTile(
             leading: const Icon(Icons.event, color: Colors.blue),
-            title: Text(appointment.service,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              appointment.service,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             subtitle: Text(
-                'Hora: ${DateFormat('HH:mm').format(appointment.dateTime)}'),
+              'Hora: ${DateFormat('HH:mm').format(appointment.dateTime)}\nCliente: ${appointment.username}',
+            ),
           ),
         );
       },

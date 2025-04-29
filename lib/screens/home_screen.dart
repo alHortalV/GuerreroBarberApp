@@ -137,7 +137,7 @@ class HomeScreenState extends State<HomeScreen> {
           title: Row(
             children: [
               Image.asset(
-                'assets/images/logo.png',
+                'assets/logo.png',
                 height: 36,
                 // Si no tienes el logo, usa un ícono:
                 errorBuilder: (context, error, stackTrace) => const Icon(

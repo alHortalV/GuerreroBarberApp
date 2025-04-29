@@ -28,7 +28,7 @@ class ClientsListScreen extends StatelessWidget {
                         ? const Icon(Icons.person)
                         : null,
                   ),
-                  title: Text(data['name'] ?? data['email']),
+                  title: Text(data['username'] ?? data['email']),
                   onTap: () {
                     Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => ClientHistoryScreen(

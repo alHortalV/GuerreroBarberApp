@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:guerrero_barber_app/screens/admin/admin.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
+import 'package:guerrero_barber_app/screens/admin/user_details_screen.dart';
+import 'package:guerrero_barber_app/models/user_model.dart';
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});
@@ -22,7 +24,7 @@ class _AdminPanelState extends State<AdminPanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _loadProfileImage();
   }
 
@@ -96,10 +98,6 @@ class _AdminPanelState extends State<AdminPanel>
                 icon: Icon(Icons.calendar_today),
                 text: 'Calendario',
               ),
-              Tab(
-                icon: Icon(Icons.history),
-                text: 'Canceladas',
-              ),
             ],
           ),
         ),
@@ -111,7 +109,7 @@ class _AdminPanelState extends State<AdminPanel>
               children: [
                 // Slider horizontal con la lista de clientes
                 SizedBox(
-                  height: 100,
+                  height: 200,
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('users')
@@ -126,116 +124,170 @@ class _AdminPanelState extends State<AdminPanel>
                             child: Text('No hay clientes registrados.'));
                       }
                       final clients = snapshot.data!.docs;
-                      return ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: clients.length,
-                        itemBuilder: (context, index) {
-                          final data =
-                              clients[index].data() as Map<String, dynamic>;
-                          final clientName = data['username'] ?? data['email'];
-                          final clientEmail = data['email'];
-                          final isSelected = selectedIndex == index;
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedIndex = index;
-                                selectedEmail = clientEmail;
-                                selectedName = clientName;
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 16),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? Theme.of(context).colorScheme.secondary
-                                    : Theme.of(context).colorScheme.surface,
-                                borderRadius: BorderRadius.circular(8),
-                                border: isSelected
-                                    ? Border.all(color: Colors.black, width: 2)
-                                    : null,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  clientName,
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: isSelected
-                                        ? Colors.white
-                                        : Colors.black,
+                      return Column(
+                        children: [
+                          Expanded(
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: clients.length,
+                              itemBuilder: (context, index) {
+                                final data = clients[index].data() as Map<String, dynamic>;
+                                final clientName = data['username'] ?? data['email'];
+                                final clientEmail = data['email'];
+                                final profileImage = data['profileImageUrl'];
+                                final isSelected = selectedIndex == index;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      selectedIndex = index;
+                                      selectedEmail = clientEmail;
+                                      selectedName = clientName;
+                                    });
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 300),
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    width: 150,
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? Theme.of(context).colorScheme.secondary
+                                          : Theme.of(context).colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: isSelected
+                                          ? Border.all(color: Colors.black, width: 2)
+                                          : null,
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 35,
+                                          backgroundImage: profileImage != null
+                                              ? NetworkImage(profileImage)
+                                              : null,
+                                          child: profileImage == null
+                                              ? const Icon(Icons.person, size: 35)
+                                              : null,
+                                        ),
+                                        const SizedBox(height: 12),
+                                        Flexible(
+                                          child: Text(
+                                            clientName,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            softWrap: true,
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: ElevatedButton.icon(
+                                    onPressed: selectedEmail != null
+                                        ? () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => ClientHistoryScreen(
+                                                  clientEmail: selectedEmail!,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(context).colorScheme.primary,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                    ),
+                                    icon: const Icon(Icons.history, color: Colors.white),
+                                    label: const Text(
+                                      'Historial',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          );
-                        },
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: ElevatedButton.icon(
+                                    onPressed: selectedIndex != null
+                                        ? () {
+                                            final userId = clients[selectedIndex!].id;
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => UserDetailsScreen(userId: userId),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                    ),
+                                    icon: const Icon(Icons.edit, color: Colors.white),
+                                    label: const Text(
+                                      'Editar',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  child: ElevatedButton.icon(
+                                    onPressed: selectedEmail != null && selectedName != null
+                                        ? () {
+                                            Navigator.of(context).push(
+                                              MaterialPageRoute(
+                                                builder: (_) => ClientConfirmedAppointmentsScreen(
+                                                  clientEmail: selectedEmail!,
+                                                  clientName: selectedName!,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        : null,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Theme.of(context).colorScheme.tertiary,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                    ),
+                                    icon: const Icon(Icons.event_available, color: Colors.white),
+                                    label: const Text(
+                                      'Citas',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       );
                     },
                   ),
-                ),
-                const SizedBox(height: 16),
-                // Botones de acciones
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: ElevatedButton.icon(
-                          onPressed: selectedEmail != null
-                              ? () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => ClientHistoryScreen(
-                                        clientEmail: selectedEmail!,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          icon: const Icon(Icons.history, color: Colors.white),
-                          label: const Text(
-                            'Historial',
-                            style: TextStyle(fontSize: 16, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: ElevatedButton.icon(
-                          onPressed: selectedEmail != null && selectedName != null
-                              ? () {
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => ClientConfirmedAppointmentsScreen(
-                                        clientEmail: selectedEmail!,
-                                        clientName: selectedName!,
-                                      ),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.secondary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                          icon: const Icon(Icons.event_available, color: Colors.white),
-                          label: const Text(
-                            'Citas',
-                            style: TextStyle(fontSize: 16, color: Colors.white),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -243,8 +295,6 @@ class _AdminPanelState extends State<AdminPanel>
             const PendingAppointmentsScreen(),
             // Tercera pestaña: Calendario admin
             const CalendarAdminScreen(),
-            // Cuarta pestaña: Citas canceladas
-            const CancelledAppointmentsScreen(),
           ],
         ),
       ),

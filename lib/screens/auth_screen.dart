@@ -163,48 +163,79 @@ class _AuthScreenState extends State<AuthScreen>
       if (isLogin) {
         userCredential = await _auth.signInWithEmailAndPassword(
             email: email, password: password);
-        // Obtén el nombre del usuario desde la colección de users
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userCredential.user!.uid)
-            .get();
-        if (userDoc.exists) {
-          final data = userDoc.data() as Map<String, dynamic>;
-          username = data['username'] ?? '';
-        }
+            
         // Comprobar si las credenciales pertenecen a un administrador
         final adminSnapshot = await FirebaseFirestore.instance
             .collection('admins')
             .where('email', isEqualTo: email)
             .get();
         bool isAdmin = false;
+        String? currentUsername;
+
         if (adminSnapshot.docs.isNotEmpty) {
-          final adminData = adminSnapshot.docs.first.data();
-          // Se asume que en el documento de admins se guarda la contraseña en claro (o con un método compatible)
+          final adminDoc = adminSnapshot.docs.first;
+          final adminData = adminDoc.data();
           if (adminData['email'] == email) {
             isAdmin = true;
+            currentUsername = adminData['username'] ?? '';
           }
-          username = adminData['username'] ?? '';
-        }
-        if (isAdmin) {
-          // Si es administrador, registrar el token del dispositivo
-          await DeviceTokenService().registerDeviceToken();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Bienvenido de nuevo, $username')),
-            );
-            Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => AdminPanel()));
+
+          if (isAdmin) {
+            // Si es administrador, registrar el token del dispositivo
+            await DeviceTokenService().registerDeviceToken();
+            
+            final lastLoginAt = adminData['lastLoginAt'];
+            await FirebaseFirestore.instance
+                .collection('admins')
+                .doc(adminDoc.id)
+                .update({'lastLoginAt': FieldValue.serverTimestamp()});
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(lastLoginAt == null 
+                    ? '¡Bienvenido, $currentUsername!' 
+                    : 'Bienvenido de nuevo, $currentUsername'),
+                ),
+              );
+              Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => AdminPanel()));
+            }
           }
-        } else {
-          // También registrar el token para usuarios normales
-          await DeviceTokenService().registerDeviceToken();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Bienvenido de nuevo, $username')),
-            );
-            Navigator.of(context)
-                .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+        } 
+        
+        if (!isAdmin) {
+          // Obtener los datos más recientes del usuario
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .get();
+          
+          if (userDoc.exists) {
+            final userData = userDoc.data() as Map<String, dynamic>;
+            currentUsername = userData['username'] ?? '';
+            final lastLoginAt = userData['lastLoginAt'];
+            
+            // Actualizar lastLoginAt
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(userCredential.user!.uid)
+                .update({'lastLoginAt': FieldValue.serverTimestamp()});
+
+            // También registrar el token para usuarios normales
+            await DeviceTokenService().registerDeviceToken();
+
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(lastLoginAt == null 
+                    ? '¡Bienvenido, $currentUsername!' 
+                    : 'Bienvenido de nuevo, $currentUsername'),
+                ),
+              );
+              Navigator.of(context)
+                  .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+            }
           }
         }
       } else {
@@ -219,13 +250,16 @@ class _AuthScreenState extends State<AuthScreen>
           'phone': '', // Campo para el número de teléfono
           'profileImageUrl': '', // Campo para la foto de perfil
           'createdAt': FieldValue.serverTimestamp(), // Fecha de creación
+          'lastLoginAt': FieldValue.serverTimestamp(), // Última fecha de inicio de sesión
           'role': 'cliente', // Rol por defecto
         });
-        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
-          SnackBar(content: Text('Registro exitoso')),
-        );
-        Navigator.of(mounted ? context : context)
-            .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('¡Bienvenido, $username!')),
+          );
+          Navigator.of(context)
+              .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+        }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
@@ -298,36 +332,60 @@ class _AuthScreenState extends State<AuthScreen>
             .collection('users')
             .doc(user.uid)
             .get();
-        if (!userDoc.exists) {
+
+        String? currentUsername;
+        bool isNewUser = !userDoc.exists;
+        
+        if (isNewUser) {
+          currentUsername = user.displayName ?? '';
           // Crear el documento del usuario
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set({
-            'username': user.displayName ?? '',
+            'username': currentUsername,
             'email': user.email ?? '',
-            'phone': '', // Campo para el número de teléfono
-            'profileImageUrl': user.photoURL ?? '', // Usar la foto de perfil de Google si está disponible
-            'createdAt': FieldValue.serverTimestamp(), // Fecha de creación
+            'phone': '',
+            'profileImageUrl': user.photoURL ?? '',
+            'createdAt': FieldValue.serverTimestamp(),
+            'lastLoginAt': FieldValue.serverTimestamp(),
             'role': 'cliente',
+          });
+        } else {
+          // Obtener el nombre de usuario actual de Firestore
+          final userData = userDoc.data() as Map<String, dynamic>;
+          currentUsername = userData['username'] ?? '';
+          
+          // Actualizar lastLoginAt para usuarios existentes
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .update({
+            'lastLoginAt': FieldValue.serverTimestamp(),
           });
         }
 
-        ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
-          SnackBar(
-            content: Text("Bienvenido, ${user.displayName ?? ''}"),
-          ),
-        );
-        Navigator.of(mounted ? context : context).pushReplacement(
-          MaterialPageRoute(builder: (_) => HomeScreen()),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isNewUser 
+                ? '¡Bienvenido, $currentUsername!' 
+                : 'Bienvenido de nuevo, $currentUsername'),
+            ),
+          );
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => HomeScreen()),
+          );
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(mounted ? context : context).showSnackBar(
-        SnackBar(
-          content: Text("Error al iniciar sesión con Google: ${e.toString()}"),
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error al iniciar sesión con Google: ${e.toString()}"),
+          ),
+        );
+      }
     }
   }
 

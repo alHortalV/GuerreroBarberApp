@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:guerrero_barber_app/theme/theme.dart';
 import 'package:intl/intl.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
 
@@ -36,25 +37,36 @@ class PendingAppointmentsScreen extends StatelessWidget {
 
             return Card(
               margin: const EdgeInsets.all(8.0),
+              elevation: Theme.of(context).brightness == Brightness.dark ? 4 : 1,
+              color: Theme.of(context).brightness == Brightness.dark 
+                  ? Theme.of(context).cardTheme.color 
+                  : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: ListTile(
+                contentPadding: const EdgeInsets.all(16),
                 title: Text(
                   'Cliente: ${data['username'] ?? data['userEmail']}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
                 subtitle: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const SizedBox(height: 8),
                     Text(
                       'Servicio: ${data['service']}',
-                      style: const TextStyle(fontSize: 16),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
+                    const SizedBox(height: 4),
                     Text(
                       'Fecha: ${DateFormat('EEEE d MMMM, y', 'es_ES').format(dateTime)}',
-                      style: const TextStyle(fontSize: 16),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
+                    const SizedBox(height: 4),
                     Text(
                       'Hora: ${DateFormat('HH:mm').format(dateTime)}',
-                      style: const TextStyle(fontSize: 16),
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
                 ),
@@ -62,11 +74,17 @@ class PendingAppointmentsScreen extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.check_circle, color: Colors.green),
+                      icon: Icon(
+                        Icons.check_circle,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
                       onPressed: () => _approveAppointment(context, appointment.id, data),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.cancel, color: Colors.red),
+                      icon: Icon(
+                        Icons.cancel,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                       onPressed: () => _rejectAppointment(context, appointment.id, data),
                     ),
                   ],
@@ -110,7 +128,11 @@ class PendingAppointmentsScreen extends StatelessWidget {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cita aprobada correctamente')),
+          SnackBar(
+            content: Text('Cita aprobada correctamente'),
+            backgroundColor: Theme.of(context).extension<CustomThemeExtension>()!
+              .appointmentStatusColors.confirmedBackground,
+          ),
         );
       }
     } catch (e) {

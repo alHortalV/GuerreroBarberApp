@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:guerrero_barber_app/theme/theme.dart';
 import 'package:intl/intl.dart';
 
 class AppointmentStatusScreen extends StatelessWidget {
@@ -131,6 +132,8 @@ class AppointmentStatusScreen extends StatelessWidget {
   }
 
   Widget _buildHorizontalTimeline(BuildContext context, String status) {
+    final customTheme = Theme.of(context).extension<CustomThemeExtension>()!;
+    
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -139,23 +142,35 @@ class AppointmentStatusScreen extends StatelessWidget {
           Icons.post_add_rounded,
           'Creada',
           true,
-          Colors.green,
+          customTheme.appointmentStatusColors.confirmedIcon,
         ),
-        _buildArrow(status == 'approved' ? Colors.green : Colors.orange),
+        _buildArrow(
+          status == 'approved' 
+            ? customTheme.appointmentStatusColors.confirmedIcon 
+            : customTheme.appointmentStatusColors.pendingIcon
+        ),
         _buildTimelineStep(
           context,
           Icons.pending_actions,
           'Pendiente',
           status == 'pending',
-          status == 'approved' ? Colors.green : Colors.orange,
+          status == 'approved' 
+            ? customTheme.appointmentStatusColors.confirmedIcon 
+            : customTheme.appointmentStatusColors.pendingIcon,
         ),
-        _buildArrow(status == 'approved' ? Colors.green : Colors.grey),
+        _buildArrow(
+          status == 'approved' 
+            ? customTheme.appointmentStatusColors.confirmedIcon 
+            : Theme.of(context).colorScheme.onSurface.withOpacity(0.3)
+        ),
         _buildTimelineStep(
           context,
           Icons.check_circle_outline,
           'Confirmada',
           status == 'approved',
-          status == 'approved' ? Colors.green : Colors.grey,
+          status == 'approved' 
+            ? customTheme.appointmentStatusColors.confirmedIcon 
+            : Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
         ),
       ],
     );

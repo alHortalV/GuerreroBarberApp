@@ -46,7 +46,7 @@ class _CalendarAdminScreenState extends State<CalendarAdminScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -89,16 +89,24 @@ class _CalendarAdminScreenState extends State<CalendarAdminScreen> {
                 onPageChanged: (focusedDay) {
                   _focusedDay = focusedDay;
                 },
-                // Sin calendarBuilders: colores por defecto
-                calendarStyle: const CalendarStyle(
+                calendarStyle: CalendarStyle(
                   isTodayHighlighted: true,
                   selectedDecoration: BoxDecoration(
-                    color: Colors.blue,
+                    color: Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
                   todayDecoration: BoxDecoration(
-                    color: Colors.redAccent,
+                    color: Theme.of(context).colorScheme.secondary,
                     shape: BoxShape.circle,
+                  ),
+                  defaultTextStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  weekendTextStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ),
+                  outsideTextStyle: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
                   ),
                 ),
                 headerStyle: HeaderStyle(
@@ -143,7 +151,10 @@ class _CalendarAdminScreenState extends State<CalendarAdminScreen> {
         return Card(
           elevation: 2,
           child: ListTile(
-            leading: const Icon(Icons.event, color: Colors.blue),
+            leading: Icon(
+              Icons.event, 
+              color: Theme.of(context).colorScheme.primary
+            ),
             title: Text(
               appointment.service,
               style: const TextStyle(fontWeight: FontWeight.bold),

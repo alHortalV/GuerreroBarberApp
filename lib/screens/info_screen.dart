@@ -34,7 +34,7 @@ class InfoScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Más información', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.blue,
+        backgroundColor: Theme.of(context).colorScheme.primary,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
@@ -55,7 +55,7 @@ class InfoScreen extends StatelessWidget {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.phone, color: Colors.green),
+              leading: Icon(Icons.phone, color: Theme.of(context).colorScheme.primary),
               title: const Text('Teléfono'),
               subtitle: const Text('695261211'),
               onTap: _callPhone,
@@ -63,7 +63,7 @@ class InfoScreen extends StatelessWidget {
             ),
             const Divider(),
             ListTile(
-              leading: const Icon(Icons.location_on, color: Colors.red),
+              leading: Icon(Icons.location_on, color: Theme.of(context).colorScheme.error),
               title: const Text('Ubicación'),
               subtitle: const Text('C/Valladolid 68, 18100 Armilla, Granada'),
               onTap: _openMap,

@@ -56,7 +56,7 @@ class _AdminPanelState extends State<AdminPanel>
         appBar: AppBar(
           automaticallyImplyLeading: false,
           title: const Text('Panel de Administración'),
-          backgroundColor: Colors.red,
+          backgroundColor: Theme.of(context).colorScheme.secondary,
           actions: [
             GestureDetector(
               onTap: () async {
@@ -147,8 +147,8 @@ class _AdminPanelState extends State<AdminPanel>
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.redAccent
-                                    : Colors.grey[300],
+                                    ? Theme.of(context).colorScheme.secondary
+                                    : Theme.of(context).colorScheme.surface,
                                 borderRadius: BorderRadius.circular(8),
                                 border: isSelected
                                     ? Border.all(color: Colors.black, width: 2)
@@ -187,7 +187,7 @@ class _AdminPanelState extends State<AdminPanel>
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 16),
                   ),

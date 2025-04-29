@@ -2,14 +2,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:guerrero_barber_app/services/notifications_service.dart';
-import 'package:guerrero_barber_app/screens/splash_screen.dart';
+import 'package:guerrero_barber_app/services/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:guerrero_barber_app/theme/theme.dart';
 import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'package:guerrero_barber_app/widgets/widgets.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -166,7 +167,38 @@ class _MyAppState extends State<MyApp> {
         _notificationsService.updateContext(context);
         return child ?? const SizedBox.shrink();
       },
-      home: const SplashScreen(),
+      home: StreamBuilder<firebase_auth.User?>(
+        stream: firebase_auth.FirebaseAuth.instance.authStateChanges(),
+        builder: (BuildContext context, AsyncSnapshot<firebase_auth.User?> snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SplashScreen();
+          }
+
+          if (!snapshot.hasData) {
+            return const AuthScreen();
+          }
+
+          // Si el usuario está autenticado, verificamos si es admin
+          return StreamBuilder<bool>(
+            stream: AdminService().adminStateChanges(),
+            builder: (context, adminSnapshot) {
+              if (adminSnapshot.connectionState == ConnectionState.waiting) {
+                return const SplashScreen();
+              }
+
+              // Si es admin, mostramos el panel de admin
+              if (adminSnapshot.data == true) {
+                return const AdminPanel();
+              }
+
+              // Si no es admin, mostramos la pantalla normal con el checker de citas canceladas
+              return CheckCancelledAppointments(
+                child: const HomeScreen(),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

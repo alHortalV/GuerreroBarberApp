@@ -10,7 +10,7 @@ class ClientHistoryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final oneYearAgo = DateTime.now().subtract(const Duration(days: 365));
     return Scaffold(
-      appBar: AppBar(title: const Text("Historial de Cortes")),
+      appBar: AppBar(title: const Text("Historial de Citas")),
       body: FutureBuilder<QuerySnapshot>(
         future: FirebaseFirestore.instance
             .collection("appointments")

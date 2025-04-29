@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:guerrero_barber_app/screens/admin/admin.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
-import 'package:guerrero_barber_app/screens/admin/calendar_admin_screen.dart';
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});
@@ -23,7 +22,7 @@ class _AdminPanelState extends State<AdminPanel>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadProfileImage();
   }
 
@@ -91,11 +90,15 @@ class _AdminPanelState extends State<AdminPanel>
               ),
               Tab(
                 icon: Icon(Icons.pending_actions),
-                text: 'Citas Pendientes',
+                text: 'Pendientes',
               ),
               Tab(
                 icon: Icon(Icons.calendar_today),
                 text: 'Calendario',
+              ),
+              Tab(
+                icon: Icon(Icons.history),
+                text: 'Canceladas',
               ),
             ],
           ),
@@ -118,11 +121,11 @@ class _AdminPanelState extends State<AdminPanel>
                         return const Center(
                             child: Text('Error al cargar los clientes.'));
                       }
-                      final clients = snapshot.data!.docs;
-                      if (clients.isEmpty) {
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                         return const Center(
                             child: Text('No hay clientes registrados.'));
                       }
+                      final clients = snapshot.data!.docs;
                       return ListView.builder(
                         scrollDirection: Axis.horizontal,
                         itemCount: clients.length,
@@ -173,28 +176,66 @@ class _AdminPanelState extends State<AdminPanel>
                   ),
                 ),
                 const SizedBox(height: 16),
-                // Botón para ver el Historial de Cortes
-                ElevatedButton(
-                  onPressed: selectedEmail != null
-                      ? () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => ClientHistoryScreen(
-                                clientEmail: selectedEmail!,
-                              ),
-                            ),
-                          );
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16),
-                  ),
-                  child: const Text(
-                    'Historial de Cortes',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                // Botones de acciones
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: ElevatedButton.icon(
+                          onPressed: selectedEmail != null
+                              ? () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ClientHistoryScreen(
+                                        clientEmail: selectedEmail!,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          icon: const Icon(Icons.history, color: Colors.white),
+                          label: const Text(
+                            'Historial',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: ElevatedButton.icon(
+                          onPressed: selectedEmail != null && selectedName != null
+                              ? () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => ClientConfirmedAppointmentsScreen(
+                                        clientEmail: selectedEmail!,
+                                        clientName: selectedName!,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.secondary,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          icon: const Icon(Icons.event_available, color: Colors.white),
+                          label: const Text(
+                            'Citas',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -202,6 +243,8 @@ class _AdminPanelState extends State<AdminPanel>
             const PendingAppointmentsScreen(),
             // Tercera pestaña: Calendario admin
             const CalendarAdminScreen(),
+            // Cuarta pestaña: Citas canceladas
+            const CancelledAppointmentsScreen(),
           ],
         ),
       ),

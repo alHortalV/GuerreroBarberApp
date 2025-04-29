@@ -179,7 +179,9 @@ class AppointmentsList extends StatelessWidget {
 
                           return Dismissible(
                             key: Key(data['id']),
-                            direction: DismissDirection.endToStart,
+                            direction: status.toLowerCase() == 'pending' 
+                                ? DismissDirection.endToStart 
+                                : DismissDirection.none,
                             background: Container(
                               margin: const EdgeInsets.symmetric(vertical: 8),
                               decoration: BoxDecoration(
@@ -204,6 +206,16 @@ class AppointmentsList extends StatelessWidget {
                               ),
                             ),
                             confirmDismiss: (direction) async {
+                              if (status.toLowerCase() != 'pending') {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('No puedes eliminar una cita confirmada'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                                return false;
+                              }
+                              
                               return await showDialog(
                                 context: context,
                                 builder: (BuildContext context) {

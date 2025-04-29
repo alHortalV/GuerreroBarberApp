@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:guerrero_barber_app/theme/theme.dart';
+import 'package:guerrero_barber_app/widgets/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
 
@@ -129,7 +130,7 @@ class PendingAppointmentsScreen extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Cita aprobada correctamente'),
+            content: const Text('Cita aprobada correctamente'),
             backgroundColor: Theme.of(context).extension<CustomThemeExtension>()!
               .appointmentStatusColors.confirmedBackground,
           ),
@@ -145,42 +146,21 @@ class PendingAppointmentsScreen extends StatelessWidget {
   }
 
   Future<void> _rejectAppointment(BuildContext context, String appointmentId, Map<String, dynamic> appointmentData) async {
-    try {
-      final dateTime = DateTime.parse(appointmentData['dateTime']);
-      final userToken = appointmentData['userToken'];
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => CancelAppointmentDialog(
+        appointmentId: appointmentId,
+        appointmentData: appointmentData,
+      ),
+    );
 
-      // Eliminar la cita
-      await FirebaseFirestore.instance
-          .collection('appointments')
-          .doc(appointmentId)
-          .delete();
-
-      // Enviar notificación al cliente
-      if (userToken != null) {
-        final notificationsService = NotificationsService();
-        final title = 'Cita no disponible';
-        final body = 'Lo sentimos, tu cita para el ${DateFormat('EEEE d MMMM', 'es_ES').format(dateTime)} a las ${DateFormat('HH:mm').format(dateTime)} no está disponible.';
-
-        await notificationsService.sendNotification(
-          token: userToken,
-          title: title,
-          body: body,
-        );
-      } else {
-        print('No se encontró token para el usuario ${appointmentData['userEmail']}');
-      }
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cita rechazada correctamente')),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al rechazar la cita: $e')),
-        );
-      }
+    if (result == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cita rechazada correctamente'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 } 

@@ -5,126 +5,107 @@ final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
   
   // Colores base del tema
-  primaryColor: const Color(0xFF181818), // Negro elegante
-  scaffoldBackgroundColor: const Color(0xFF121212), // Negro profundo para el fondo
+  primaryColor: const Color(0xFF2C2C2C),
+  scaffoldBackgroundColor: const Color(0xFF1A1A1A),
   
   // Esquema de colores
   colorScheme: ColorScheme.dark(
-    primary: const Color(0xFF181818), // Negro elegante
-    secondary: const Color(0xFFD90429), // Rojo vibrante consistente con el tema claro
-    tertiary: const Color(0xFF8D99AE), // Gris azulado
-    surface: const Color(0xFF1E1E1E), // Gris muy oscuro para tarjetas
-    background: const Color(0xFF121212), // Negro profundo
-    error: const Color(0xFFD90429), // Rojo consistente
-    onPrimary: Colors.white,
-    onSecondary: Colors.white,
-    onSurface: Colors.white,
-    onBackground: Colors.white,
-    onError: Colors.white,
+    primary: const Color(0xFF2C2C2C),
+    secondary: const Color(0xFFD90429),
+    tertiary: const Color(0xFF8D99AE),
+    surface: const Color(0xFF262626),
+    background: const Color(0xFF1A1A1A),
+    error: const Color(0xFFD90429),
+    onPrimary: const Color(0xFFF5F5F5),
+    onSecondary: const Color(0xFFF5F5F5),
+    onSurface: const Color(0xFFF5F5F5),
+    onBackground: const Color(0xFFF5F5F5),
+    onError: const Color(0xFFF5F5F5),
     brightness: Brightness.dark,
   ),
 
   // Tema de AppBar
   appBarTheme: const AppBarTheme(
-    backgroundColor: Color(0xFF181818), // Negro elegante
-    elevation: 0, // Sin elevación para aspecto moderno
-    centerTitle: true, // Título centrado
+    backgroundColor: Color(0xFF2C2C2C),
+    elevation: 0,
+    centerTitle: true,
     titleTextStyle: TextStyle(
-      color: Colors.white,
+      color: Color(0xFFF5F5F5),
       fontSize: 20,
       fontWeight: FontWeight.w600,
-      letterSpacing: 0.5, // Ligero espaciado para elegancia
+      letterSpacing: 0.5,
     ),
-    iconTheme: IconThemeData(color: Colors.white),
+    iconTheme: IconThemeData(color: Color(0xFFF5F5F5)),
   ),
 
   // Tema de Card
   cardTheme: CardTheme(
-    color: const Color(0xFF242424), // Gris oscuro para tarjetas
-    elevation: 8, // Un poco más de elevación para que destaque en fondo oscuro
-    shadowColor: Colors.black.withOpacity(0.5), // Sombra más pronunciada en modo oscuro
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
+    color: const Color.fromARGB(95, 90, 90, 90), // Fondo transparente para permitir gradiente
+    elevation: 0, // Sin elevación para el efecto personalizado
     margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
   ),
 
   // Tema de Texto
   textTheme: const TextTheme(
-    // Títulos
     headlineLarge: TextStyle(
-      color: Colors.white,
+      color: Color(0xFFF5F5F5),
       fontSize: 32,
       fontWeight: FontWeight.bold,
-      letterSpacing: -0.5, // Ligero espaciado negativo para un look moderno
+      letterSpacing: -0.5,
     ),
     headlineMedium: TextStyle(
-      color: Colors.white,
+      color: Color(0xFFF5F5F5),
       fontSize: 28,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.5,
     ),
     headlineSmall: TextStyle(
-      color: Colors.white,
+      color: Color(0xFFF5F5F5),
       fontSize: 24,
       fontWeight: FontWeight.bold,
     ),
-    
-    // Títulos de tarjetas y secciones
     titleLarge: TextStyle(
-      color: Colors.white,
+      color: Color(0xFFF5F5F5),
       fontSize: 20,
       fontWeight: FontWeight.w600,
     ),
     titleMedium: TextStyle(
-      color: Colors.white,
+      color: Color(0xFFF5F5F5),
       fontSize: 18,
       fontWeight: FontWeight.w600,
     ),
     titleSmall: TextStyle(
-      color: Colors.white,
+      color: Color(0xFFF5F5F5),
       fontSize: 16,
       fontWeight: FontWeight.w600,
     ),
-    
-    // Texto del cuerpo
     bodyLarge: TextStyle(
-      color: Colors.white,
+      color: Color(0xFFF5F5F5),
       fontSize: 16,
     ),
     bodyMedium: TextStyle(
-      color: Color(0xFFDFDFDF), // Blanco ligeramente grisáceo
+      color: Color(0xFFE0E0E0),
       fontSize: 14,
     ),
     bodySmall: TextStyle(
-      color: Color(0xFFAEAEB2), // Gris claro para texto terciario
+      color: Color(0xFFBDBDBD),
       fontSize: 12,
-    ),
-    
-    // Etiquetas y botones
-    labelLarge: TextStyle(
-      color: Colors.white,
-      fontSize: 16,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.5, // Ligero espaciado para elegancia
     ),
   ),
 
   // Tema de Botones Elevados
   elevatedButtonTheme: ElevatedButtonThemeData(
     style: ElevatedButton.styleFrom(
-      foregroundColor: Colors.white,
-      backgroundColor: const Color(0xFFD90429), // Rojo consistente con tema claro
+      foregroundColor: Color(0xFFF5F5F5),
+      backgroundColor: Color(0xFFD90429),
       elevation: 4,
-      shadowColor: const Color(0xFFD90429).withOpacity(0.3),
+      shadowColor: Color(0xFFD90429).withOpacity(0.3),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-      ),
-      textStyle: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        letterSpacing: 0.5,
       ),
     ),
   ),
@@ -132,7 +113,7 @@ final ThemeData darkTheme = ThemeData(
   // Tema de Botones de Texto
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(
-      foregroundColor: const Color(0xFFEF233C), // Un tono más claro del rojo para visibilidad
+      foregroundColor: const Color(0xFFF5F5F5), // Blanco apagado para modo oscuro
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       textStyle: const TextStyle(
         fontSize: 14,
@@ -145,43 +126,41 @@ final ThemeData darkTheme = ThemeData(
   // Tema de Campos de Texto
   inputDecorationTheme: InputDecorationTheme(
     filled: true,
-    fillColor: const Color(0xFF1E1E1E), // Un tono más claro que el fondo
+    fillColor: const Color(0xFF2C2C2C),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: Colors.grey[700]!),
+      borderSide: const BorderSide(color: Color(0xFF424242)),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
-      borderSide: BorderSide(color: Colors.grey[700]!),
+      borderSide: const BorderSide(color: Color(0xFF424242)),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
-      borderSide: const BorderSide(color: Color(0xFFD90429)), // Rojo cuando está enfocado
+      borderSide: const BorderSide(color: Color(0xFFD90429)),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(8),
       borderSide: const BorderSide(color: Color(0xFFD90429)),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    labelStyle: const TextStyle(color: Color(0xFFAEAEB2)),
-    hintStyle: const TextStyle(color: Color(0xFF8E8E93)),
-    prefixIconColor: const Color(0xFFAEAEB2),
-    suffixIconColor: const Color(0xFFAEAEB2),
-  ),
-
-  // Tema de Divider
-  dividerTheme: DividerThemeData(
-    color: Colors.grey[800],
-    thickness: 1,
-    space: 16,
+    labelStyle: const TextStyle(color: Color(0xFFBDBDBD)),
+    hintStyle: const TextStyle(color: Color(0xFF9E9E9E)),
   ),
 
   // Tema de BottomNavigationBar
-  bottomNavigationBarTheme: BottomNavigationBarThemeData(
-    backgroundColor: const Color(0xFF181818),
-    selectedItemColor: const Color(0xFFD90429), // Rojo para selección
-    unselectedItemColor: Colors.grey[400],
+  bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    backgroundColor: Color(0xFF2C2C2C),
+    selectedItemColor: Color(0xFFD90429),
+    unselectedItemColor: Color(0xFF9E9E9E),
     elevation: 8,
+  ),
+
+  // Tema de Divider
+  dividerTheme: const DividerThemeData(
+    color: Color(0xFF424242),
+    thickness: 1,
+    space: 16,
   ),
 
   // Tema de Switch
@@ -205,20 +184,26 @@ final ThemeData darkTheme = ThemeData(
     CustomThemeExtension(
       appointmentStatusColors: AppointmentStatusColors(
         // Pendiente
-        pendingBackground: const Color(0xFF3D2E16), // Naranja muy oscuro
-        pendingText: const Color(0xFFFCB762), // Naranja claro para texto
-        pendingIcon: const Color(0xFFF29727), // Naranja brillante
+        pendingBackground: Colors.orange.withOpacity(0.1),
+        pendingText: Colors.orange[300]!,
+        pendingIcon: Colors.orange[400]!,
         // Confirmada
-        confirmedBackground: const Color(0xFF0F362A), // Verde oscuro
-        confirmedText: const Color(0xFF4CD080), // Verde claro para texto
-        confirmedIcon: const Color(0xFF28A160), // Verde brillante
+        confirmedBackground: const Color(0xFF2C2C2C), // Más claro que el fondo
+        confirmedText: Colors.green[300]!,
+        confirmedIcon: Colors.green[400]!,
         // Cancelada
-        canceledBackground: const Color(0xFF331016), // Rojo oscuro
-        canceledText: const Color(0xFFFF8A9A), // Rojo claro para texto
-        canceledIcon: const Color(0xFFD90429), // Rojo brillante
+        canceledBackground: Colors.red.withOpacity(0.1),
+        canceledText: Colors.red[300]!,
+        canceledIcon: Colors.red[400]!,
       ),
     ),
   ],
+
+  // Tema de Iconos
+  iconTheme: const IconThemeData(
+    color: Color(0xFFF5F5F5), // Blanco apagado para iconos en modo oscuro
+    size: 24,
+  ),
 
   // Otros ajustes generales
   useMaterial3: true,

@@ -37,7 +37,7 @@ class HomeScreenState extends State<HomeScreen> {
     // Configurar el tema de la barra de estado
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
+      
     ));
   }
 
@@ -48,7 +48,7 @@ class HomeScreenState extends State<HomeScreen> {
           .collection('users')
           .doc(user.uid)
           .snapshots();
-      
+
       _userSubscription = _userStream.listen((snapshot) async {
         if (snapshot.exists) {
           final data = snapshot.data() as Map<String, dynamic>;
@@ -205,37 +205,25 @@ class HomeScreenState extends State<HomeScreen> {
           ],
         ),
         body: SafeArea(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Theme.of(context).scaffoldBackgroundColor,
-                  Theme.of(context).scaffoldBackgroundColor.withAlpha(9),
-                ],
-              ),
-            ),
-            child: PageView(
-              physics: const NeverScrollableScrollPhysics(),
-              controller: _pageController,
-              onPageChanged: (index) {
-                if (index >= 0 && index < (userRole == 'admin' ? 4 : 4)) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                }
-              },
-              children: [
-                AppointmentsList(username: _username),
-                BookAppointmentWidget(key: _bookAppointmentKey),
-                const CalendarScreen(),
-                if (userRole == 'admin')
-                  const PendingAppointmentsScreen()
-                else
-                  const AppointmentStatusScreen(),
-              ],
-            ),
+          child: PageView(
+            physics: const NeverScrollableScrollPhysics(),
+            controller: _pageController,
+            onPageChanged: (index) {
+              if (index >= 0 && index < (userRole == 'admin' ? 4 : 4)) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              }
+            },
+            children: [
+              AppointmentsList(username: _username),
+              BookAppointmentWidget(key: _bookAppointmentKey),
+              const CalendarScreen(),
+              if (userRole == 'admin')
+                const PendingAppointmentsScreen()
+              else
+                const AppointmentStatusScreen(),
+            ],
           ),
         ),
         bottomNavigationBar: Padding(
@@ -263,7 +251,8 @@ class HomeScreenState extends State<HomeScreen> {
                 currentIndex: _currentIndex,
                 type: BottomNavigationBarType.fixed,
                 selectedItemColor: Theme.of(context).colorScheme.onPrimary,
-                unselectedItemColor: Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
+                unselectedItemColor:
+                    Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
                 selectedFontSize: 11,
                 unselectedFontSize: 11,
                 iconSize: 24,
@@ -293,10 +282,14 @@ class HomeScreenState extends State<HomeScreen> {
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(
-                      userRole == 'admin' ? Icons.admin_panel_settings_outlined : Icons.pending_actions_outlined,
+                      userRole == 'admin'
+                          ? Icons.admin_panel_settings_outlined
+                          : Icons.pending_actions_outlined,
                     ),
                     activeIcon: Icon(
-                      userRole == 'admin' ? Icons.admin_panel_settings : Icons.pending_actions,
+                      userRole == 'admin'
+                          ? Icons.admin_panel_settings
+                          : Icons.pending_actions,
                     ),
                     label: userRole == 'admin' ? 'Admin' : 'Estado',
                   ),

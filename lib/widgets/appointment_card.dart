@@ -35,23 +35,13 @@ class AppointmentCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isPending
-              ? [
-                  Colors.orange.withOpacity(0.1),
-                  Colors.orange.withOpacity(0.05),
-                ]
-              : [
-                  Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                ],
-        ),
+        color: isPending
+            ? Colors.orange.withValues(alpha: 0.3)
+            : Theme.of(context).colorScheme.primary.withValues(alpha: 1.2),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -191,7 +181,10 @@ class AppointmentCard extends StatelessWidget {
                               icon: const Icon(Icons.info_outline, size: 18),
                               label: const Text('Detalles'),
                               style: TextButton.styleFrom(
-                                foregroundColor: Colors.grey[700],
+                                foregroundColor: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : Colors.grey[700],
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 8),
                                 visualDensity: VisualDensity.compact,
@@ -200,7 +193,10 @@ class AppointmentCard extends StatelessWidget {
                             Container(
                               height: 20,
                               width: 1,
-                              color: Colors.grey[300],
+                              color: Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? Colors.white.withOpacity(0.2)
+                                  : Colors.grey[300],
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                             ),
                             TextButton.icon(
@@ -208,16 +204,26 @@ class AppointmentCard extends StatelessWidget {
                               icon: Icon(
                                 Icons.notifications_outlined,
                                 size: 18,
-                                color: isConfirmed
-                                    ? Colors.grey[700]
-                                    : Colors.grey[400],
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? (isConfirmed
+                                        ? Colors.white
+                                        : Colors.white.withOpacity(0.5))
+                                    : (isConfirmed
+                                        ? Colors.grey[700]
+                                        : Colors.grey[400]),
                               ),
                               label: Text(
                                 'Recordar',
                                 style: TextStyle(
-                                  color: isConfirmed
-                                      ? Colors.grey[700]
-                                      : Colors.grey[400],
+                                  color: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? (isConfirmed
+                                          ? Colors.white
+                                          : Colors.white.withOpacity(0.5))
+                                      : (isConfirmed
+                                          ? Colors.grey[700]
+                                          : Colors.grey[400]),
                                 ),
                               ),
                               style: TextButton.styleFrom(

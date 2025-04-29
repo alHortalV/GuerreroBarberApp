@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/screens/home_screen.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
+import 'package:guerrero_barber_app/widgets/widgets.dart';
 import 'package:intl/intl.dart';
 
 class AppointmentsList extends StatelessWidget {
@@ -402,13 +403,17 @@ class AppointmentsList extends StatelessWidget {
   }
 
   Widget _buildDetailRow(BuildContext context, String label, String value, IconData icon, {Color? color}) {
+    final bool isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
           icon,
           size: 20,
-          color: color ?? Theme.of(context).colorScheme.primary,
+          color: isDarkMode 
+              ? Colors.white 
+              : (color ?? Theme.of(context).colorScheme.primary),
         ),
         const SizedBox(width: 8),
         Expanded(
@@ -419,13 +424,18 @@ class AppointmentsList extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.secondary,
+                  color: isDarkMode 
+                      ? Colors.white 
+                      : Theme.of(context).colorScheme.secondary,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: const TextStyle(fontSize: 16),
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDarkMode ? Colors.white : null,
+                ),
               ),
             ],
           ),

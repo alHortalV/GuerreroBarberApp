@@ -72,7 +72,7 @@ class AppointmentStatusScreen extends StatelessWidget {
                         children: [
                           Icon(
                             Icons.content_cut,
-                            color: Theme.of(context).primaryColor,
+                            color: Colors.grey,
                             size: 24,
                           ),
                           const SizedBox(width: 8),

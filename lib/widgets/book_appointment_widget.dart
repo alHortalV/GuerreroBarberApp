@@ -67,6 +67,7 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
                 primary: Theme.of(context).colorScheme.secondary),
+            
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
                   foregroundColor: Theme.of(context).colorScheme.secondary),

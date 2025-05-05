@@ -15,25 +15,25 @@ Pese a estar enfocado en una barbería en concreto, se hará lo más modular pos
 
 ## ✨ Funcionalidades Destacadas
 
-- 🔹 **Gestión de Clientes**  
+🔹 **Gestión de Clientes**  
   Visualiza, edita y administra la lista completa de usuarios registrados.
 
-- 🔹 **Citas Pendientes**  
+🔹 **Citas Pendientes**  
   Administra las solicitudes de cita en tiempo real: aprueba o rechaza con notificaciones automáticas.
 
-- 🔹 **Calendario Interactivo**  
+🔹 **Calendario Interactivo**  
   Visualización organizada de todas las citas agendadas con integración de un calendario dinámico.
 
-- 🔹 **Historial y Configuración**  
+🔹 **Historial y Configuración**  
   Accede al historial de clientes y ajusta preferencias administrativas de forma sencilla.
 
-- 🔹 **Notificaciones Push**  
+🔹 **Notificaciones Push**  
   Integración con **Firebase Messaging** para mantener informados a usuarios sobre cambios en sus citas.
 
-- 🔹 **Autenticación y Archivos**  
+🔹 **Autenticación y Archivos**  
   Gestión de usuarios mediante **Firebase Auth** y almacenamiento de archivos con **Firebase Storage**.
 
-- 🔹 **Servicios Personalizados**  
+🔹 **Servicios Personalizados**  
   Agrega, modifica y gestiona múltiples servicios ofrecidos por la barbería.
 
 ---

@@ -73,7 +73,7 @@ assets/                 # Recursos gráficos y multimedia
 ```
 
 <p align="center">
-  <img src="assets/logoReadme.png" alt="Barbería Guerrero" width="500" style="border-radius: 15px;"/>
+  <img src="assets/logoReadme.jpg" alt="Barbería Guerrero" width="500" style="border-radius: 15px;"/>
 </p>
 
 

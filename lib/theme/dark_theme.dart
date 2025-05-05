@@ -184,15 +184,15 @@ final ThemeData darkTheme = ThemeData(
     CustomThemeExtension(
       appointmentStatusColors: AppointmentStatusColors(
         // Pendiente
-        pendingBackground: Colors.orange.withOpacity(0.1),
+        pendingBackground: Colors.orange.withAlpha(60),
         pendingText: Colors.orange[300]!,
         pendingIcon: Colors.orange[400]!,
         // Confirmada
-        confirmedBackground: const Color(0xFF2C2C2C), // Más claro que el fondo
+        confirmedBackground: Color.fromARGB(255, 36, 121, 73).withAlpha(60),
         confirmedText: Colors.green[300]!,
         confirmedIcon: Colors.green[400]!,
         // Cancelada
-        canceledBackground: Colors.red.withOpacity(0.1),
+        canceledBackground: Colors.red,
         canceledText: Colors.red[300]!,
         canceledIcon: Colors.red[400]!,
       ),
@@ -200,8 +200,8 @@ final ThemeData darkTheme = ThemeData(
   ],
 
   // Tema de Iconos
-  iconTheme: const IconThemeData(
-    color: Color(0xFFF5F5F5), // Blanco apagado para iconos en modo oscuro
+  iconTheme: IconThemeData(
+    color: Colors.white, // Blanco puro para iconos en modo oscuro
     size: 24,
   ),
 

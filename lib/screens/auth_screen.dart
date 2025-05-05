@@ -335,7 +335,7 @@ class _AuthScreenState extends State<AuthScreen>
 
         String? currentUsername;
         bool isNewUser = !userDoc.exists;
-        
+
         if (isNewUser) {
           currentUsername = user.displayName ?? '';
           // Crear el documento del usuario
@@ -352,10 +352,8 @@ class _AuthScreenState extends State<AuthScreen>
             'role': 'cliente',
           });
         } else {
-          // Obtener el nombre de usuario actual de Firestore
           final userData = userDoc.data() as Map<String, dynamic>;
           currentUsername = userData['username'] ?? '';
-          
           // Actualizar lastLoginAt para usuarios existentes
           await FirebaseFirestore.instance
               .collection('users')
@@ -365,27 +363,29 @@ class _AuthScreenState extends State<AuthScreen>
           });
         }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isNewUser 
-                ? '¡Bienvenido, $currentUsername!' 
-                : 'Bienvenido de nuevo, $currentUsername'),
-            ),
-          );
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => HomeScreen()),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Error al iniciar sesión con Google: ${e.toString()}"),
+            content: Text(isNewUser
+                ? '¡Bienvenido, $currentUsername!'
+                : 'Bienvenido de nuevo, $currentUsername'),
           ),
         );
+        // Espera a que el SnackBar se muestre antes de navegar
+        await Future.delayed(const Duration(milliseconds: 500));
+        if (!mounted) return;
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => HomeScreen()),
+        );
       }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Error al iniciar sesión con Google: \\${e.toString()}"),
+        ),
+      );
     }
   }
 

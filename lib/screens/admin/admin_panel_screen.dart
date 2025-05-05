@@ -131,8 +131,10 @@ class _AdminPanelState extends State<AdminPanel>
                               scrollDirection: Axis.horizontal,
                               itemCount: clients.length,
                               itemBuilder: (context, index) {
-                                final data = clients[index].data() as Map<String, dynamic>;
-                                final clientName = data['username'] ?? data['email'];
+                                final data = clients[index].data()
+                                    as Map<String, dynamic>;
+                                final clientName =
+                                    data['username'] ?? data['email'];
                                 final clientEmail = data['email'];
                                 final profileImage = data['profileImageUrl'];
                                 final isSelected = selectedIndex == index;
@@ -155,15 +157,21 @@ class _AdminPanelState extends State<AdminPanel>
                                     width: 150,
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? Theme.of(context).colorScheme.secondary
-                                          : Theme.of(context).colorScheme.surface,
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .secondary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .surface,
                                       borderRadius: BorderRadius.circular(8),
                                       border: isSelected
-                                          ? Border.all(color: Colors.black, width: 2)
+                                          ? Border.all(
+                                              color: Colors.black, width: 2)
                                           : null,
                                     ),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
                                         CircleAvatar(
@@ -172,7 +180,8 @@ class _AdminPanelState extends State<AdminPanel>
                                               ? NetworkImage(profileImage)
                                               : null,
                                           child: profileImage == null
-                                              ? const Icon(Icons.person, size: 35)
+                                              ? const Icon(Icons.person,
+                                                  size: 35)
                                               : null,
                                         ),
                                         const SizedBox(height: 12),
@@ -180,12 +189,9 @@ class _AdminPanelState extends State<AdminPanel>
                                           child: Text(
                                             clientName,
                                             style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              color: isSelected
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                            ),
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.white),
                                             textAlign: TextAlign.center,
                                             softWrap: true,
                                             maxLines: 1,
@@ -203,13 +209,15 @@ class _AdminPanelState extends State<AdminPanel>
                             children: [
                               Expanded(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                   child: ElevatedButton.icon(
                                     onPressed: selectedEmail != null
                                         ? () {
                                             Navigator.of(context).push(
                                               MaterialPageRoute(
-                                                builder: (_) => ClientHistoryScreen(
+                                                builder: (_) =>
+                                                    ClientHistoryScreen(
                                                   clientEmail: selectedEmail!,
                                                 ),
                                               ),
@@ -217,10 +225,13 @@ class _AdminPanelState extends State<AdminPanel>
                                           }
                                         : null,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Theme.of(context).colorScheme.primary,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      backgroundColor:
+                                          Theme.of(context).colorScheme.primary,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
                                     ),
-                                    icon: const Icon(Icons.history, color: Colors.white),
+                                    icon: const Icon(Icons.history,
+                                        color: Colors.white),
                                     label: const Text(
                                       'Historial',
                                       style: TextStyle(color: Colors.white),
@@ -230,23 +241,31 @@ class _AdminPanelState extends State<AdminPanel>
                               ),
                               Expanded(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                   child: ElevatedButton.icon(
                                     onPressed: selectedIndex != null
                                         ? () {
-                                            final userId = clients[selectedIndex!].id;
+                                            final userId =
+                                                clients[selectedIndex!].id;
                                             Navigator.of(context).push(
                                               MaterialPageRoute(
-                                                builder: (_) => UserDetailsScreen(userId: userId),
+                                                builder: (_) =>
+                                                    UserDetailsScreen(
+                                                        userId: userId),
                                               ),
                                             );
                                           }
                                         : null,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Theme.of(context).colorScheme.secondary,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .secondary,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
                                     ),
-                                    icon: const Icon(Icons.edit, color: Colors.white),
+                                    icon: const Icon(Icons.edit,
+                                        color: Colors.white),
                                     label: const Text(
                                       'Editar',
                                       style: TextStyle(color: Colors.white),
@@ -256,13 +275,16 @@ class _AdminPanelState extends State<AdminPanel>
                               ),
                               Expanded(
                                 child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                   child: ElevatedButton.icon(
-                                    onPressed: selectedEmail != null && selectedName != null
+                                    onPressed: selectedEmail != null &&
+                                            selectedName != null
                                         ? () {
                                             Navigator.of(context).push(
                                               MaterialPageRoute(
-                                                builder: (_) => ClientConfirmedAppointmentsScreen(
+                                                builder: (_) =>
+                                                    ClientConfirmedAppointmentsScreen(
                                                   clientEmail: selectedEmail!,
                                                   clientName: selectedName!,
                                                 ),
@@ -271,10 +293,14 @@ class _AdminPanelState extends State<AdminPanel>
                                           }
                                         : null,
                                     style: ElevatedButton.styleFrom(
-                                      backgroundColor: Theme.of(context).colorScheme.tertiary,
-                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      backgroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .tertiary,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 16),
                                     ),
-                                    icon: const Icon(Icons.event_available, color: Colors.white),
+                                    icon: const Icon(Icons.event_available,
+                                        color: Colors.white),
                                     label: const Text(
                                       'Citas',
                                       style: TextStyle(color: Colors.white),

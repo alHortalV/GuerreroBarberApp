@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:guerrero_barber_app/screens/auth_screen.dart';
 import 'package:guerrero_barber_app/services/supabase_service.dart';
+import 'package:guerrero_barber_app/main.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -14,7 +15,6 @@ class AdminSettingsScreen extends StatefulWidget {
 }
 
 class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
-  final _formKey = GlobalKey<FormState>();
   final TextEditingController _usernameController = TextEditingController();
   String? _currentPhotoUrl;
   bool _isLoading = false;
@@ -157,8 +157,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     }
   }
 
-  Future<void> _updateProfile() async {
-    if (_formKey.currentState!.validate()) {
+  Future<void> _updateProfile(GlobalKey<FormState> formKey) async {
+    if (formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
       try {
@@ -194,117 +194,148 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final _formKey = GlobalKey<FormState>();
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ajustes', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.red,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Foto de perfil
-                GestureDetector(
-                  onTap: _showImageSourceDialog,
-                  child: Stack(
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Dropdown para cambiar el tema
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.grey[300],
-                        backgroundImage: _currentPhotoUrl != null
-                            ? NetworkImage(_currentPhotoUrl!)
-                            : null,
-                        child: _currentPhotoUrl == null
-                            ? const Icon(Icons.person, size: 50, color: Colors.grey)
-                            : null,
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
+                      const Text('Tema:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 12),
+                      DropdownButton<ThemeMode>(
+                        value: themeModeNotifier.value,
+                        items: const [
+                          DropdownMenuItem(
+                            value: ThemeMode.system,
+                            child: Text('Sistema'),
                           ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 20,
+                          DropdownMenuItem(
+                            value: ThemeMode.light,
+                            child: Text('Claro'),
                           ),
-                        ),
+                          DropdownMenuItem(
+                            value: ThemeMode.dark,
+                            child: Text('Oscuro'),
+                          ),
+                        ],
+                        onChanged: (mode) {
+                          if (mode != null) themeModeNotifier.value = mode;
+                        },
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
-                // Formulario
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _usernameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nombre de usuario',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
+                  const SizedBox(height: 16),
+                  // Foto de perfil
+                  GestureDetector(
+                    onTap: _showImageSourceDialog,
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Colors.grey[300],
+                          backgroundImage: _currentPhotoUrl != null
+                              ? NetworkImage(_currentPhotoUrl!)
+                              : null,
+                          child: _currentPhotoUrl == null
+                              ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                              : null,
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Por favor ingresa un nombre de usuario';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _updateProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          minimumSize: const Size(double.infinity, 50),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
                         ),
-                        child: const Text(
-                          'Guardar Cambios',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await FirebaseAuth.instance.signOut();
-                          if (mounted) {
-                            Navigator.of(context.mounted ? context : context).pushReplacement(
-                              MaterialPageRoute(builder: (_) => const AuthScreen()),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey,
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: const Text(
-                          'Cerrar Sesión',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          if (_isLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(),
+                  const SizedBox(height: 24),
+                  // Formulario
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _usernameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nombre de usuario',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.person),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Por favor ingresa un nombre de usuario';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: () => _updateProfile(_formKey),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          child: const Text(
+                            'Guardar Cambios',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-        ],
+            if (_isLoading)
+              Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            // FAB de cerrar sesión
+            Positioned(
+              bottom: 24,
+              right: 24,
+              child: FloatingActionButton(
+                heroTag: 'logout_admin',
+                backgroundColor: Colors.red,
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const AuthScreen()),
+                    );
+                  }
+                },
+                child: const Icon(Icons.logout, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

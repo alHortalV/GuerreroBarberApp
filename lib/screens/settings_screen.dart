@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/services/supabase_service.dart';
+import 'package:guerrero_barber_app/main.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -198,148 +199,173 @@ class _SettingsScreenState extends State<SettingsScreen> {
         backgroundColor: Theme.of(context).colorScheme.primary,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Foto de perfil
-                GestureDetector(
-                  onTap: _showImageSourceDialog,
-                  child: Stack(
+      body: SizedBox.expand(
+        child: Stack(
+          children: [
+            SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Dropdown para cambiar el tema
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Theme.of(context).colorScheme.surface,
-                        backgroundImage: _currentPhotoUrl != null
-                            ? NetworkImage(_currentPhotoUrl!)
-                            : null,
-                        child: _currentPhotoUrl == null
-                            ? const Icon(Icons.person, size: 50, color: Colors.grey)
-                            : null,
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
+                      const Text('Tema:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 12),
+                      DropdownButton<ThemeMode>(
+                        value: themeModeNotifier.value,
+                        items: const [
+                          DropdownMenuItem(
+                            value: ThemeMode.system,
+                            child: Text('Sistema'),
                           ),
-                          child: const Icon(
-                            Icons.camera_alt,
-                            color: Colors.white,
-                            size: 20,
+                          DropdownMenuItem(
+                            value: ThemeMode.light,
+                            child: Text('Claro'),
                           ),
-                        ),
+                          DropdownMenuItem(
+                            value: ThemeMode.dark,
+                            child: Text('Oscuro'),
+                          ),
+                        ],
+                        onChanged: (mode) {
+                          if (mode != null) themeModeNotifier.value = mode;
+                        },
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 24),
-                // Formulario
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _usernameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Nombre de usuario',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
+                  const SizedBox(height: 16),
+                  // Foto de perfil
+                  GestureDetector(
+                    onTap: _showImageSourceDialog,
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: Theme.of(context).colorScheme.surface,
+                          backgroundImage: _currentPhotoUrl != null
+                              ? NetworkImage(_currentPhotoUrl!)
+                              : null,
+                          child: _currentPhotoUrl == null
+                              ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                              : null,
                         ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Por favor ingresa un nombre de usuario';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _phoneController,
-                        decoration: const InputDecoration(
-                          labelText: 'Número de teléfono',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.phone),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
                         ),
-                        keyboardType: TextInputType.phone,
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Por favor ingresa un número de teléfono';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton(
-                        onPressed: _updateProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
-                          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: const Text(
-                          'Guardar Cambios',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await FirebaseAuth.instance.signOut();
-                          if (mounted) {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (_) => const AuthScreen()),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.secondary,
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: const Text(
-                          'Cerrar Sesión',
-                          style: TextStyle(fontSize: 16, color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Añadir el botón "Más información" debajo del formulario
-                Padding(
-                  padding: const EdgeInsets.only(top: 24.0),
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.info_outline),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueGrey,
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const InfoScreen()),
-                      );
-                    },
-                    label: const Text(
-                      'Más información',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          if (_isLoading)
-            Container(
-              color: Colors.black54,
-              child: const Center(
-                child: CircularProgressIndicator(),
+                  const SizedBox(height: 24),
+                  // Formulario
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _usernameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Nombre de usuario',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.person),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Por favor ingresa un nombre de usuario';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _phoneController,
+                          decoration: const InputDecoration(
+                            labelText: 'Número de teléfono',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.phone),
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Por favor ingresa un número de teléfono';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton(
+                          onPressed: _updateProfile,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                            minimumSize: const Size(double.infinity, 50),
+                          ),
+                          child: const Text(
+                            'Guardar Cambios',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-        ],
+            if (_isLoading)
+              Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            // FAB de cerrar sesión
+            Positioned(
+              bottom: 24,
+              right: 24,
+              child: FloatingActionButton(
+                heroTag: 'logout_user',
+                backgroundColor: Colors.red,
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (mounted) {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const AuthScreen()),
+                    );
+                  }
+                },
+                child: const Icon(Icons.logout, color: Colors.white),
+              ),
+            ),
+            // FAB de más información
+            Positioned(
+              bottom: 24,
+              left: 24,
+              child: FloatingActionButton(
+                heroTag: 'info_user',
+                backgroundColor: Colors.blue,
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const InfoScreen()),
+                  );
+                },
+                child: const Icon(Icons.info_outline, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

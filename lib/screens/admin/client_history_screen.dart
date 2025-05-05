@@ -24,6 +24,11 @@ class ClientHistoryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final oneYearAgo = DateTime.now().subtract(const Duration(days: 365));
+    final appointmentsQuery = FirebaseFirestore.instance
+        .collection("appointments")
+        .where("userEmail", isEqualTo: clientEmail)
+        .where('dateTime', isGreaterThanOrEqualTo: oneYearAgo.toIso8601String())
+        .get();
     return Scaffold(
       appBar: AppBar(
         title: const Text("Historial de Citas"),
@@ -88,12 +93,7 @@ class ClientHistoryScreen extends StatelessWidget {
                 ),
               Expanded(
                 child: FutureBuilder<QuerySnapshot>(
-                  future: FirebaseFirestore.instance
-                      .collection("appointments")
-                      .where("userEmail", isEqualTo: clientEmail)
-                      .where('dateTime', isGreaterThanOrEqualTo: oneYearAgo.toIso8601String())
-                      .orderBy('dateTime', descending: true)
-                      .get(),
+                  future: appointmentsQuery,
                   builder: (context, snapshot) {
                     if (!snapshot.hasData) {
                       return const Center(child: CircularProgressIndicator());
@@ -118,15 +118,13 @@ class ClientHistoryScreen extends StatelessWidget {
                         final status = data["status"] ?? "";
                         Color? cardColor;
                         IconData? icon;
+                        final isDark = Theme.of(context).brightness == Brightness.dark;
                         if (status == 'pending') {
                           cardColor = Theme.of(context).extension<CustomThemeExtension>()?.appointmentStatusColors.pendingBackground;
                           icon = Icons.hourglass_empty;
                         } else if (status == 'approved') {
                           cardColor = Theme.of(context).extension<CustomThemeExtension>()?.appointmentStatusColors.confirmedBackground;
                           icon = Icons.check_circle;
-                        } else if (status == 'canceled') {
-                          cardColor = Theme.of(context).extension<CustomThemeExtension>()?.appointmentStatusColors.canceledBackground;
-                          icon = Icons.cancel;
                         }
                         return Card(
                           color: cardColor ?? Theme.of(context).cardTheme.color,
@@ -136,7 +134,10 @@ class ClientHistoryScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: ListTile(
-                            leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+                            leading: Icon(
+                              icon,
+                              color: isDark ? Colors.white : Theme.of(context).colorScheme.primary,
+                            ),
                             title: Text(
                               service,
                               style: Theme.of(context).textTheme.titleMedium,

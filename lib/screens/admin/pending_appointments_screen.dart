@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:guerrero_barber_app/theme/theme.dart';
 import 'package:guerrero_barber_app/widgets/widgets.dart';
 import 'package:intl/intl.dart';
-import 'package:guerrero_barber_app/services/notifications_service.dart';
+import 'package:guerrero_barber_app/services/services.dart';
 
 class PendingAppointmentsScreen extends StatelessWidget {
   const PendingAppointmentsScreen({super.key});
@@ -35,62 +35,79 @@ class PendingAppointmentsScreen extends StatelessWidget {
             final appointment = snapshot.data!.docs[index];
             final data = appointment.data() as Map<String, dynamic>;
             final dateTime = DateTime.parse(data['dateTime']);
+            final userEmail = data['userEmail'];
 
-            return Card(
-              margin: const EdgeInsets.all(8.0),
-              elevation: Theme.of(context).brightness == Brightness.dark ? 4 : 1,
-              color: Theme.of(context).brightness == Brightness.dark 
-                  ? Theme.of(context).cardTheme.color 
-                  : Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.all(16),
-                title: Text(
-                  'Cliente: ${data['username'] ?? data['userEmail']}',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 8),
-                    Text(
-                      'Servicio: ${data['service']}',
-                      style: Theme.of(context).textTheme.bodyMedium,
+            return FutureBuilder<QuerySnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .where('email', isEqualTo: userEmail)
+                  .limit(1)
+                  .get(),
+              builder: (context, userSnapshot) {
+                String displayName = userEmail;
+                if (userSnapshot.hasData && userSnapshot.data != null && userSnapshot.data!.docs.isNotEmpty) {
+                  final userData = userSnapshot.data!.docs.first.data() as Map<String, dynamic>;
+                  displayName = userData['username'] ?? userEmail;
+                }
+                return Card(
+                  margin: const EdgeInsets.all(8.0),
+                  elevation: Theme.of(context).brightness == Brightness.dark ? 4 : 1,
+                  color: Theme.of(context).brightness == Brightness.dark 
+                      ? Theme.of(context).cardTheme.color 
+                      : Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(16),
+                    title: Text(
+                      'Cliente: $displayName',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Fecha: ${DateFormat('EEEE d MMMM, y', 'es_ES').format(dateTime)}',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 8),
+                        Text(
+                          'Servicio: ${data['service']}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Fecha: ${DateFormat('EEEE d MMMM, y', 'es_ES').format(dateTime)}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Hora: ${DateFormat('HH:mm').format(dateTime)}',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Hora: ${DateFormat('HH:mm').format(dateTime)}',
-                      style: Theme.of(context).textTheme.bodyMedium,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.check_circle,
+                            color: Theme.of(context).brightness == Brightness.dark
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context).colorScheme.primary,
+                          ),
+                          onPressed: () => _approveAppointment(context, appointment.id, data),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.cancel,
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                          onPressed: () => _rejectAppointment(context, appointment.id, data),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.check_circle,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      onPressed: () => _approveAppointment(context, appointment.id, data),
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.cancel,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      onPressed: () => _rejectAppointment(context, appointment.id, data),
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         );

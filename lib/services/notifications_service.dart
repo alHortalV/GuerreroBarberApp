@@ -166,7 +166,7 @@ class NotificationsService {
 
       for (final token in adminTokens) {
         final response = await http.post(
-          Uri.parse(FirebaseConfig.fcmBaseUrl),
+          Uri.parse(FirebaseConfig.fromEnv().fcmBaseUrl),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $accessToken',
@@ -280,7 +280,7 @@ class NotificationsService {
 
       for (final token in adminTokens) {
         final response = await http.post(
-          Uri.parse(FirebaseConfig.fcmBaseUrl),
+          Uri.parse(FirebaseConfig.fromEnv().fcmBaseUrl),
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer $accessToken',
@@ -342,7 +342,7 @@ class NotificationsService {
       final accessToken = await OAuth2Service.getAccessToken();
 
       final response = await http.post(
-        Uri.parse(FirebaseConfig.fcmBaseUrl),
+        Uri.parse(FirebaseConfig.fromEnv().fcmBaseUrl),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
@@ -404,7 +404,7 @@ class NotificationsService {
       final accessToken = await OAuth2Service.getAccessToken();
 
       final response = await http.post(
-        Uri.parse(FirebaseConfig.fcmBaseUrl),
+        Uri.parse(FirebaseConfig.fromEnv().fcmBaseUrl),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',

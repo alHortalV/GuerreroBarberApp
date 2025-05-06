@@ -1,11 +1,10 @@
+import 'package:guerrero_barber_app/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 
 class SupabaseService {
   static final supabase = Supabase.instance.client;
-  static const String bucketName = 'guerrerobarberapp';
-  static const String projectId = 'sevejjaoodnjhzrjthuv';
-  static const String baseUrl = 'https://sevejjaoodnjhzrjthuv.supabase.co';
+
 
   // Subir imagen de perfil
   static Future<String?> uploadProfileImage(String userId, File imageFile) async {
@@ -18,7 +17,7 @@ class SupabaseService {
       // Subir el archivo a Supabase Storage
       final storageResponse = await supabase
           .storage
-          .from(bucketName)
+          .from(SupabaseConfig.fromEnv().bucketName)
           .upload(
             fileName,
             imageFile,
@@ -33,7 +32,7 @@ class SupabaseService {
       // Obtener la URL pública usando el método de Supabase
       final imageUrl = supabase
           .storage
-          .from(bucketName)
+          .from(SupabaseConfig.fromEnv().bucketName)
           .createSignedUrl(fileName, 60 * 60 * 24 * 365); // URL válida por 1 año
 
       print('URL firmada creada: $imageUrl'); // Debug
@@ -57,7 +56,7 @@ class SupabaseService {
 
       await supabase
           .storage
-          .from(bucketName)
+          .from(SupabaseConfig.fromEnv().bucketName)
           .remove([fileName]);
       
       print('Archivo eliminado exitosamente'); // Debug
@@ -90,7 +89,7 @@ class SupabaseService {
     try {
       return await supabase
           .storage
-          .from(bucketName)
+          .from(SupabaseConfig.fromEnv().bucketName)
           .createSignedUrl(fileName, 60 * 60 * 24 * 365); // URL válida por 1 año
     } catch (e) {
       print('Error al obtener URL pública: $e');

@@ -19,7 +19,7 @@ class OAuth2Service {
     final jwt = await _createJWT();
     
     final response = await http.post(
-      Uri.parse(FirebaseConfig.oauth2TokenUrl),
+      Uri.parse(FirebaseConfig.fromEnv().oauth2TokenUrl),
       body: {
         'grant_type': 'urn:ietf:params:oauth:grant-type:jwt-bearer',
         'assertion': jwt,
@@ -41,14 +41,14 @@ class OAuth2Service {
     final expiry = now.add(const Duration(hours: 1));
 
     final claims = {
-      'iss': FirebaseConfig.serviceAccountEmail,
-      'scope': FirebaseConfig.fcmScope,
-      'aud': FirebaseConfig.oauth2TokenUrl,
+      'iss': FirebaseConfig.fromEnv().serviceAccountEmail,
+      'scope': FirebaseConfig.fromEnv().fcmScope,
+      'aud': FirebaseConfig.fromEnv().oauth2TokenUrl,
       'exp': expiry.millisecondsSinceEpoch ~/ 1000,
       'iat': now.millisecondsSinceEpoch ~/ 1000,
     };
 
-    final key = JsonWebKey.fromPem(FirebaseConfig.privateKey);
+    final key = JsonWebKey.fromPem(FirebaseConfig.fromEnv().privateKey);
     final builder = JsonWebSignatureBuilder()
       ..jsonContent = claims
       ..addRecipient(key, algorithm: 'RS256');

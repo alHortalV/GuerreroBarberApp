@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:guerrero_barber_app/config/supabase_config.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:guerrero_barber_app/services/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,7 +15,8 @@ import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:guerrero_barber_app/widgets/widgets.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-final ValueNotifier<ThemeMode> themeModeNotifier = ValueNotifier(ThemeMode.system);
+final ValueNotifier<ThemeMode> themeModeNotifier =
+    ValueNotifier(ThemeMode.system);
 
 Future<void> initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,9 +24,8 @@ Future<void> initializeApp() async {
   try {
     // Inicializar Supabase primero
     await Supabase.initialize(
-      url: 'https://sevejjaoodnjhzrjthuv.supabase.co',
-      anonKey:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNldmVqamFvb2Ruamh6cmp0aHV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MTE1MDQsImV4cCI6MjA2MTA4NzUwNH0.jCaLdbclZ567DHxFlSK1_Aadrry6hdxT4m8p_U8IO_I'
+      url: SupabaseConfig.fromEnv().url,
+      anonKey: SupabaseConfig.fromEnv().anonKey,
     );
 
     // Inicializar Firebase
@@ -35,7 +37,7 @@ Future<void> initializeApp() async {
     if (Platform.isAndroid) {
       final notificationStatus = await Permission.notification.request();
       final alarmStatus = await Permission.scheduleExactAlarm.request();
-      
+
       if (notificationStatus.isDenied || alarmStatus.isDenied) {
         print('Permisos de notificación o alarma denegados');
         // Aquí podrías mostrar un diálogo explicando por qué se necesitan los permisos
@@ -62,6 +64,7 @@ Future<void> initializeApp() async {
 
 void main() async {
   try {
+    await dotenv.load();
     await initializeApp();
     runApp(const MyApp());
   } catch (e) {
@@ -173,7 +176,8 @@ class _MyAppState extends State<MyApp> {
           },
           home: StreamBuilder<firebase_auth.User?>(
             stream: firebase_auth.FirebaseAuth.instance.authStateChanges(),
-            builder: (BuildContext context, AsyncSnapshot<firebase_auth.User?> snapshot) {
+            builder: (BuildContext context,
+                AsyncSnapshot<firebase_auth.User?> snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SplashScreen();
               }
@@ -186,7 +190,8 @@ class _MyAppState extends State<MyApp> {
               return StreamBuilder<bool>(
                 stream: AdminService().adminStateChanges(),
                 builder: (context, adminSnapshot) {
-                  if (adminSnapshot.connectionState == ConnectionState.waiting) {
+                  if (adminSnapshot.connectionState ==
+                      ConnectionState.waiting) {
                     return const SplashScreen();
                   }
 

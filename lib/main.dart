@@ -17,6 +17,7 @@ import 'package:guerrero_barber_app/widgets/widgets.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ValueNotifier<ThemeMode> themeModeNotifier =
     ValueNotifier(ThemeMode.system);
+final GlobalKey<_MyAppState> myAppKey = GlobalKey<_MyAppState>();
 
 Future<void> initializeApp() async {
   try {
@@ -65,7 +66,7 @@ void main() async {
   try {
     await dotenv.load();
     await initializeApp();
-    runApp(const MyApp());
+    runApp(MyApp(key: myAppKey));
   } catch (e) {
     print('Error al iniciar la aplicación: $e');
     runApp(ErrorApp(error: e.toString()));
@@ -124,11 +125,10 @@ class ErrorApp extends StatelessWidget {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   State<MyApp> createState() => _MyAppState();
-  
 }
 
 class _MyAppState extends State<MyApp> {
@@ -143,9 +143,9 @@ class _MyAppState extends State<MyApp> {
 
   // Si necesitas forzar el cambio de clave cuando el tema cambia explícitamente
   // (esto es más relevante si controlas el cambio de tema manualmente y no solo por ThemeMode.system)
-  // void _onThemeChanged() {
-  //   setState(() => _materialAppKey = UniqueKey());
-  // }
+  void _onThemeChanged() {
+   setState(() => _materialAppKey = UniqueKey());
+  }
 
   Future<void> _initializeNotifications() async {
     try {
@@ -162,65 +162,71 @@ class _MyAppState extends State<MyApp> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeModeNotifier,
       builder: (context, themeMode, _) {
-        // Si el cambio de tema es la única causa de reconstrucción que necesita una nueva clave para MaterialApp
-        // podrías considerar actualizar _materialAppKey aquí, aunque ValueListenableBuilder
-        // ya reconstruye MaterialApp. Esto es más para casos extremos.
-        return MaterialApp(
-          key: _materialAppKey, // Usar la clave
-          navigatorKey: navigatorKey,
-          title: 'Guerrero Barber App',
-          debugShowCheckedModeBanner: false,
-          localizationsDelegates: const [
-            GlobalMaterialLocalizations.delegate,
-            GlobalWidgetsLocalizations.delegate,
-            GlobalCupertinoLocalizations.delegate,
-          ],
-          supportedLocales: const [
-            Locale('es', 'ES'),
-          ],
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: themeMode,
-          builder: (context, child) {
-            _notificationsService.updateContext(context);
-            return child ?? const SizedBox.shrink();
-          },
-          home: StreamBuilder<firebase_auth.User?>(
-            stream: firebase_auth.FirebaseAuth.instance.authStateChanges(),
-            builder: (BuildContext context,
-                AsyncSnapshot<firebase_auth.User?> snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SplashScreen();
-              }
-
-              if (!snapshot.hasData) {
-                return const AuthScreen();
-              }
-
-              // Si el usuario está autenticado, verificamos si es admin
-              return StreamBuilder<bool>(
-                stream: AdminService().adminStateChanges(),
-                builder: (context, adminSnapshot) {
-                  if (adminSnapshot.connectionState ==
-                      ConnectionState.waiting) {
+        // Envolver en un Builder y devolver un nuevo widget con UniqueKey para evitar la interpolación
+        return Builder(
+          builder: (context) {
+            return MaterialApp(
+              key: UniqueKey(),
+              navigatorKey: navigatorKey,
+              title: 'Guerrero Barber App',
+              debugShowCheckedModeBanner: false,
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [
+                Locale('es', 'ES'),
+              ],
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              themeMode: themeMode,
+              builder: (context, child) {
+                _notificationsService.updateContext(context);
+                return child ?? const SizedBox.shrink();
+              },
+              home: StreamBuilder<firebase_auth.User?>(
+                stream: firebase_auth.FirebaseAuth.instance.authStateChanges(),
+                builder: (BuildContext context,
+                    AsyncSnapshot<firebase_auth.User?> snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                     return const SplashScreen();
                   }
 
-                  // Si es admin, mostramos el panel de admin
-                  if (adminSnapshot.data == true) {
-                    return const AdminPanel();
+                  if (!snapshot.hasData) {
+                    return const AuthScreen();
                   }
 
-                  // Si no es admin, mostramos la pantalla normal con el checker de citas canceladas
-                  return CheckCancelledAppointments(
-                    child: const HomeScreen(),
+                  // Si el usuario está autenticado, verificamos si es admin
+                  return StreamBuilder<bool>(
+                    stream: AdminService().adminStateChanges(),
+                    builder: (context, adminSnapshot) {
+                      if (adminSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const SplashScreen();
+                      }
+
+                      // Si es admin, mostramos el panel de admin
+                      if (adminSnapshot.data == true) {
+                        return const AdminPanel();
+                      }
+
+                      // Si no es admin, mostramos la pantalla normal con el checker de citas canceladas
+                      return CheckCancelledAppointments(
+                        child: const HomeScreen(),
+                      );
+                    },
                   );
                 },
-              );
-            },
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
+}
+
+void forceThemeRebuild() {
+  myAppKey.currentState?._onThemeChanged();
 }

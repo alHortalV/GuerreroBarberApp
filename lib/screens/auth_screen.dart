@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:dynamic_background/dynamic_background.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
+import 'package:guerrero_barber_app/screens/loading_screen.dart';
 import 'package:guerrero_barber_app/services/device_token_service.dart';
 
 
@@ -198,8 +199,16 @@ class _AuthScreenState extends State<AuthScreen>
                     : 'Bienvenido de nuevo, $currentUsername'),
                 ),
               );
-              Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (_) => AdminPanel()));
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const LoadingScreen(),
+                ),
+              );
+              if (mounted) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => AdminPanel()),
+                );
+              }
             }
           }
         } 
@@ -233,8 +242,16 @@ class _AuthScreenState extends State<AuthScreen>
                     : 'Bienvenido de nuevo, $currentUsername'),
                 ),
               );
-              Navigator.of(context)
-                  .pushReplacement(MaterialPageRoute(builder: (_) => HomeScreen()));
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const LoadingScreen(),
+                ),
+              );
+              if (mounted) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => HomeScreen()),
+                );
+              }
             }
           }
         }
@@ -372,12 +389,18 @@ class _AuthScreenState extends State<AuthScreen>
                 : 'Bienvenido de nuevo, $currentUsername'),
           ),
         );
-        // Espera a que el SnackBar se muestre antes de navegar
         await Future.delayed(const Duration(milliseconds: 500));
         if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => HomeScreen()),
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => const LoadingScreen(),
+          ),
         );
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => HomeScreen()),
+          );
+        }
       }
     } catch (e) {
       if (!mounted) return;

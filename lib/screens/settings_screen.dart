@@ -7,6 +7,7 @@ import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/services/supabase_service.dart';
 import 'package:guerrero_barber_app/main.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:guerrero_barber_app/screens/theme_transition_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -222,12 +223,22 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
     }
   }
 
-  void _onThemeChanged(bool isDark) {
-    setState(() {
-      _isDarkMode = isDark;
-    });
-    themeModeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
-    forceThemeRebuild();
+  void _onThemeChanged(bool isDark) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ThemeTransitionScreen(
+          toDark: isDark,
+          onFinish: () {
+            Navigator.of(context).pop();
+            setState(() {
+              _isDarkMode = isDark;
+            });
+            themeModeNotifier.value = isDark ? ThemeMode.dark : ThemeMode.light;
+            forceThemeRebuild();
+          },
+        ),
+      ),
+    );
   }
 
   @override

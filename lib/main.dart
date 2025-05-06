@@ -19,8 +19,6 @@ final ValueNotifier<ThemeMode> themeModeNotifier =
     ValueNotifier(ThemeMode.system);
 
 Future<void> initializeApp() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
   try {
     // Inicializar Supabase primero
     await Supabase.initialize(
@@ -63,6 +61,7 @@ Future<void> initializeApp() async {
 }
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   try {
     await dotenv.load();
     await initializeApp();
@@ -129,16 +128,24 @@ class MyApp extends StatefulWidget {
 
   @override
   State<MyApp> createState() => _MyAppState();
+  
 }
 
 class _MyAppState extends State<MyApp> {
   final NotificationsService _notificationsService = NotificationsService();
+  Key _materialAppKey = UniqueKey(); // Añadir una clave para MaterialApp
 
   @override
   void initState() {
     super.initState();
     _initializeNotifications();
   }
+
+  // Si necesitas forzar el cambio de clave cuando el tema cambia explícitamente
+  // (esto es más relevante si controlas el cambio de tema manualmente y no solo por ThemeMode.system)
+  // void _onThemeChanged() {
+  //   setState(() => _materialAppKey = UniqueKey());
+  // }
 
   Future<void> _initializeNotifications() async {
     try {
@@ -155,7 +162,11 @@ class _MyAppState extends State<MyApp> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeModeNotifier,
       builder: (context, themeMode, _) {
+        // Si el cambio de tema es la única causa de reconstrucción que necesita una nueva clave para MaterialApp
+        // podrías considerar actualizar _materialAppKey aquí, aunque ValueListenableBuilder
+        // ya reconstruye MaterialApp. Esto es más para casos extremos.
         return MaterialApp(
+          key: _materialAppKey, // Usar la clave
           navigatorKey: navigatorKey,
           title: 'Guerrero Barber App',
           debugShowCheckedModeBanner: false,

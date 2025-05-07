@@ -6,7 +6,7 @@ Aplicación móvil desarrollada en **Flutter** para la gestión integral de una 
 
 ## 🚧 Estado del Proyecto
 
-Actualmente, **GuerreroBarberApp** se encuentra en su **versión 1.0**, con todas las funcionalidades principales implementadas y operativas.  
+Actualmente, **GuerreroBarberApp** se encuentra en su **versión 1.1**, con todas las funcionalidades principales implementadas y operativas.  
 Este proyecto está en constante evolución, con el objetivo de ser **perfeccionado y optimizado**.
 
 Pese a estar enfocado en una barbería en concreto, se hará lo más modular posible para su **posterior exhibición a distintas barberías** interesadas en soluciones digitales personalizadas para la gestión de su barbería.

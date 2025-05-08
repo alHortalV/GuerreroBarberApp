@@ -13,6 +13,7 @@ import 'firebase_options.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:guerrero_barber_app/widgets/widgets.dart';
+import 'package:guerrero_barber_app/screens/permissions_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ValueNotifier<ThemeMode> themeModeNotifier =
@@ -31,17 +32,6 @@ Future<void> initializeApp() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-
-    // Solicitar permisos en Android
-    if (Platform.isAndroid) {
-      final notificationStatus = await Permission.notification.request();
-      final alarmStatus = await Permission.scheduleExactAlarm.request();
-
-      if (notificationStatus.isDenied || alarmStatus.isDenied) {
-        print('Permisos de notificación o alarma denegados');
-        // Aquí podrías mostrar un diálogo explicando por qué se necesitan los permisos
-      }
-    }
 
     // Inicializar AndroidAlarmManager
     await AndroidAlarmManager.initialize();
@@ -125,7 +115,7 @@ class ErrorApp extends StatelessWidget {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -133,7 +123,6 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final NotificationsService _notificationsService = NotificationsService();
-  Key _materialAppKey = UniqueKey(); // Añadir una clave para MaterialApp
 
   @override
   void initState() {
@@ -144,7 +133,6 @@ class _MyAppState extends State<MyApp> {
   // Si necesitas forzar el cambio de clave cuando el tema cambia explícitamente
   // (esto es más relevante si controlas el cambio de tema manualmente y no solo por ThemeMode.system)
   void _onThemeChanged() {
-   setState(() => _materialAppKey = UniqueKey());
   }
 
   Future<void> _initializeNotifications() async {
@@ -185,40 +173,7 @@ class _MyAppState extends State<MyApp> {
                 _notificationsService.updateContext(context);
                 return child ?? const SizedBox.shrink();
               },
-              home: StreamBuilder<firebase_auth.User?>(
-                stream: firebase_auth.FirebaseAuth.instance.authStateChanges(),
-                builder: (BuildContext context,
-                    AsyncSnapshot<firebase_auth.User?> snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const SplashScreen();
-                  }
-
-                  if (!snapshot.hasData) {
-                    return const AuthScreen();
-                  }
-
-                  // Si el usuario está autenticado, verificamos si es admin
-                  return StreamBuilder<bool>(
-                    stream: AdminService().adminStateChanges(),
-                    builder: (context, adminSnapshot) {
-                      if (adminSnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const SplashScreen();
-                      }
-
-                      // Si es admin, mostramos el panel de admin
-                      if (adminSnapshot.data == true) {
-                        return const AdminPanel();
-                      }
-
-                      // Si no es admin, mostramos la pantalla normal con el checker de citas canceladas
-                      return CheckCancelledAppointments(
-                        child: const HomeScreen(),
-                      );
-                    },
-                  );
-                },
-              ),
+              home: const PermissionsScreen(),
             );
           },
         );

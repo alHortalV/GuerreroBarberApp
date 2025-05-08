@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/services/services.dart';
 import 'package:guerrero_barber_app/widgets/widgets.dart';
-import 'package:intl/intl.dart';
 import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
@@ -25,7 +24,6 @@ class HomeScreenState extends State<HomeScreen> {
       GlobalKey<BookAppointmentWidgetState>();
   late Stream<DocumentSnapshot> _userStream;
   StreamSubscription<DocumentSnapshot>? _userSubscription;
-  final List<Widget> _screens = [];
 
   @override
   void initState() {
@@ -252,7 +250,7 @@ class HomeScreenState extends State<HomeScreen> {
                 type: BottomNavigationBarType.fixed,
                 selectedItemColor: Theme.of(context).colorScheme.onPrimary,
                 unselectedItemColor:
-                    Theme.of(context).colorScheme.onPrimary.withOpacity(0.6),
+                    Theme.of(context).colorScheme.onPrimary.withAlpha(60),
                 selectedFontSize: 11,
                 unselectedFontSize: 11,
                 iconSize: 24,

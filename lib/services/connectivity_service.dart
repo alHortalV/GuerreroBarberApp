@@ -6,13 +6,14 @@ class ConnectivityService {
   final _connectivity = Connectivity();
   final _controller = StreamController<bool>.broadcast();
   bool _hasConnection = false;
+  StreamSubscription<ConnectivityResult>? _subscription;
 
   Stream<bool> get onConnectivityChanged => _controller.stream;
   bool get hasConnection => _hasConnection;
 
   ConnectivityService() {
     _initConnectivity();
-    _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
+    _subscription = _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
   }
 
   Future<void> _initConnectivity() async {
@@ -58,6 +59,7 @@ class ConnectivityService {
   }
 
   void dispose() {
+    _subscription?.cancel();
     _controller.close();
   }
 } 

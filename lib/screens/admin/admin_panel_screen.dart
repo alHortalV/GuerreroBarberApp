@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:guerrero_barber_app/screens/admin/admin.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/screens/admin/user_details_screen.dart';
-import 'package:guerrero_barber_app/models/user_model.dart';
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});

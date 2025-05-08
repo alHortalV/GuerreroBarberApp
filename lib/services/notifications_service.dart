@@ -18,13 +18,11 @@ class NotificationsService {
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
   
-  BuildContext? _context;
 
   // Constructor que acepta un BuildContext opcional
-  NotificationsService([this._context]);
+  NotificationsService();
   
   void updateContext(BuildContext context) {
-    _context = context;
   }
 
   Future<void> initNotification() async {

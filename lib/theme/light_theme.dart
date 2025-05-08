@@ -11,13 +11,11 @@ final ThemeData lightTheme = ThemeData(
     primary: const Color(0xFF2B2D42), // Azul muy oscuro/casi negro
     secondary: const Color(0xFFD90429), // Rojo vibrante para acentos
     tertiary: const Color(0xFF8D99AE), // Gris azulado para elementos secundarios
-    surface: Colors.white,
-    background: const Color(0xFFF9F7F3), // Blanco hueso
+    surface: Color(0xFFF9F7F3),
     error: const Color(0xFFD90429), // Mismo rojo de acento
     onPrimary: Colors.white,
     onSecondary: Colors.white,
     onSurface: const Color(0xFF2B2D42), // Azul oscuro para texto
-    onBackground: const Color(0xFF2B2D42), // Azul oscuro para texto
     onError: Colors.white,
   ),
 
@@ -161,7 +159,7 @@ final ThemeData lightTheme = ThemeData(
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     labelStyle: const TextStyle(color: Color(0xFF8D99AE)),
-    hintStyle: TextStyle(color: const Color(0xFF8D99AE).withOpacity(0.7)),
+    hintStyle: TextStyle(color:  Color(0xFF8D99AE).withAlpha(70)),
     prefixIconColor: const Color(0xFF2B2D42),
     suffixIconColor: const Color(0xFF2B2D42),
   ),

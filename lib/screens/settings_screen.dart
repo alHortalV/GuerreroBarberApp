@@ -356,7 +356,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withAlpha(30),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
@@ -376,7 +376,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             value: _isDarkMode,
             onChanged: _onThemeChanged,
             activeColor: Colors.amber,
-            activeTrackColor: Colors.amber.withOpacity(0.5),
+            activeTrackColor: Colors.amber.withAlpha(50),
             inactiveThumbColor: Colors.grey[300],
             inactiveTrackColor: Colors.grey[400],
           ),
@@ -488,7 +488,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 ),
               ],
               border: Border.all(
-                color: colorScheme.primary.withOpacity(0.5),
+                color: colorScheme.primary.withAlpha(50),
                 width: 4,
               ),
               image: _currentPhotoUrl != null
@@ -502,7 +502,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 ? Icon(
                     Icons.person,
                     size: 60,
-                    color: isDark ? colorScheme.onPrimary.withOpacity(0.7) : colorScheme.primary.withOpacity(0.7),
+                    color: isDark ? colorScheme.onPrimary.withAlpha(70) : colorScheme.primary.withAlpha(70),
                   )
                 : null,
           ),
@@ -516,7 +516,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: colorScheme.primary.withOpacity(0.5),
+                    color: colorScheme.primary.withAlpha(50),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),

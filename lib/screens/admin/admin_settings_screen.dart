@@ -22,7 +22,6 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> with SingleTi
   bool _isLoading = false;
   final user = FirebaseAuth.instance.currentUser;
   late AnimationController _animationController;
-  bool _isDarkMode = false;
   
   @override
   void initState() {
@@ -34,7 +33,6 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> with SingleTi
     );
     
     // Determinar el tema actual
-    _isDarkMode = themeModeNotifier.value == ThemeMode.dark;
   }
 
   Future<void> _loadAdminData() async {
@@ -323,7 +321,6 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> with SingleTi
           onFinish: () {
             Navigator.of(context).pop();
             setState(() {
-              _isDarkMode = isDark;
             });
             themeModeNotifier.value = mode;
             forceThemeRebuild();

@@ -4,6 +4,8 @@ import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:guerrero_barber_app/services/connectivity_service.dart';
+import 'dart:io';
+import 'package:permission_handler/permission_handler.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -70,12 +72,9 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _initializeApp() async {
     if (!mounted) return;
-
     try {
       final hasConnection = await _connectivityService.checkConnection();
-      
       if (!mounted) return;
-
       if (!hasConnection) {
         setState(() {
           _error = 'No hay conexión a Internet';
@@ -83,10 +82,8 @@ class _SplashScreenState extends State<SplashScreen>
         });
         return;
       }
-
       await Future.delayed(const Duration(seconds: 2));
       if (!mounted) return;
-      
       await _checkAuthState();
     } catch (e) {
       if (!mounted) return;

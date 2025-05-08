@@ -200,6 +200,26 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         selectedTime!.minute,
       );
 
+      // Validar si ya existe una cita en la misma fecha y hora
+      final existing = await FirebaseFirestore.instance
+          .collection('appointments')
+          .where('dateTime', isEqualTo: appointmentDateTime)
+          .get();
+      if (existing.docs.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ya existe una cita reservada para esa hora.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
       final String appointmentId =
           FirebaseFirestore.instance.collection('appointments').doc().id;
 

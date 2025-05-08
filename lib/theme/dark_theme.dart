@@ -3,11 +3,11 @@ import 'package:guerrero_barber_app/theme/theme.dart';
 
 final ThemeData darkTheme = ThemeData(
   brightness: Brightness.dark,
-  
+
   // Colores base del tema
   primaryColor: const Color(0xFF2C2C2C),
   scaffoldBackgroundColor: const Color(0xFF1A1A1A),
-  
+
   // Esquema de colores
   colorScheme: ColorScheme.dark(
     primary: const Color(0xFF2C2C2C),
@@ -40,7 +40,8 @@ final ThemeData darkTheme = ThemeData(
 
   // Tema de Card
   cardTheme: CardTheme(
-    color: const Color.fromARGB(95, 90, 90, 90), // Fondo transparente para permitir gradiente
+    color: const Color.fromARGB(
+        95, 90, 90, 90), // Fondo transparente para permitir gradiente
     elevation: 0, // Sin elevación para el efecto personalizado
     margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
     shape: RoundedRectangleBorder(
@@ -113,7 +114,8 @@ final ThemeData darkTheme = ThemeData(
   // Tema de Botones de Texto
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(
-      foregroundColor: const Color(0xFFF5F5F5), // Blanco apagado para modo oscuro
+      foregroundColor:
+          const Color(0xFFF5F5F5), // Blanco apagado para modo oscuro
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       textStyle: const TextStyle(
         fontSize: 14,
@@ -173,7 +175,8 @@ final ThemeData darkTheme = ThemeData(
     }),
     trackColor: MaterialStateProperty.resolveWith((states) {
       if (states.contains(MaterialState.selected)) {
-        return const Color(0xFFD90429).withOpacity(0.5); // Rojo semi-transparente para la pista
+        return const Color(0xFFD90429)
+            .withOpacity(0.5); // Rojo semi-transparente para la pista
       }
       return Colors.grey[800];
     }),

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'splash_screen.dart';
+import 'package:guerrero_barber_app/screens/screen.dart';
 
 class PermissionsScreen extends StatefulWidget {
   const PermissionsScreen({super.key});
@@ -63,7 +63,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.notifications_active, size: 80, color: Theme.of(context).colorScheme.primary),
+              Icon(Icons.notifications_active, size: 80, color: Theme.of(context).colorScheme.onSurface),
               const SizedBox(height: 24),
               const Text(
                 'Permisos requeridos',

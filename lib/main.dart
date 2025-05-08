@@ -1,9 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:guerrero_barber_app/config/supabase_config.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:guerrero_barber_app/services/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:guerrero_barber_app/theme/theme.dart';
@@ -11,9 +9,7 @@ import 'package:android_alarm_manager_plus/android_alarm_manager_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:guerrero_barber_app/widgets/widgets.dart';
-import 'package:guerrero_barber_app/screens/permissions_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ValueNotifier<ThemeMode> themeModeNotifier =
@@ -123,11 +119,23 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   final NotificationsService _notificationsService = NotificationsService();
+  bool _showPermissionsScreen = true;
+  bool _loadingPrefs = true;
 
   @override
   void initState() {
     super.initState();
     _initializeNotifications();
+    _checkPermissionsScreen();
+  }
+
+  Future<void> _checkPermissionsScreen() async {
+    final prefs = await SharedPreferences.getInstance();
+    final shown = prefs.getBool('permissions_screen_shown') ?? false;
+    setState(() {
+      _showPermissionsScreen = !shown;
+      _loadingPrefs = false;
+    });
   }
 
   // Si necesitas forzar el cambio de clave cuando el tema cambia explícitamente
@@ -150,9 +158,13 @@ class _MyAppState extends State<MyApp> {
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: themeModeNotifier,
       builder: (context, themeMode, _) {
-        // Envolver en un Builder y devolver un nuevo widget con UniqueKey para evitar la interpolación
         return Builder(
           builder: (context) {
+            if (_loadingPrefs) {
+              return const MaterialApp(
+                home: Scaffold(body: Center(child: CircularProgressIndicator())),
+              );
+            }
             return MaterialApp(
               key: UniqueKey(),
               navigatorKey: navigatorKey,
@@ -173,7 +185,7 @@ class _MyAppState extends State<MyApp> {
                 _notificationsService.updateContext(context);
                 return child ?? const SizedBox.shrink();
               },
-              home: const PermissionsScreen(),
+              home: _showPermissionsScreen ? const PermissionsScreen() : const SplashScreen(),
             );
           },
         );

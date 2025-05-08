@@ -4,8 +4,6 @@ import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:guerrero_barber_app/services/connectivity_service.dart';
-import 'dart:io';
-import 'package:permission_handler/permission_handler.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

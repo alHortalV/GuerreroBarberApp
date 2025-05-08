@@ -184,7 +184,7 @@ class AppointmentCard extends StatelessWidget {
                                 foregroundColor: Theme.of(context).brightness ==
                                         Brightness.dark
                                     ? Colors.white
-                                    : Colors.grey[700],
+                                    : Colors.white,
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 8),
                                 visualDensity: VisualDensity.compact,
@@ -210,8 +210,8 @@ class AppointmentCard extends StatelessWidget {
                                         ? Colors.white
                                         : Colors.white.withOpacity(0.5))
                                     : (isConfirmed
-                                        ? Colors.grey[700]
-                                        : Colors.grey[400]),
+                                        ? Colors.grey[400]
+                                        : Colors.grey[700]),
                               ),
                               label: Text(
                                 'Recordar',
@@ -219,11 +219,11 @@ class AppointmentCard extends StatelessWidget {
                                   color: Theme.of(context).brightness ==
                                           Brightness.dark
                                       ? (isConfirmed
-                                          ? Colors.white
-                                          : Colors.white.withOpacity(0.5))
+                                          ? Colors.white.withOpacity(0.5)
+                                          : Colors.white)
                                       : (isConfirmed
-                                          ? Colors.grey[700]
-                                          : Colors.grey[400]),
+                                          ? Colors.grey[400]
+                                          : Colors.grey[700]),
                                 ),
                               ),
                               style: TextButton.styleFrom(

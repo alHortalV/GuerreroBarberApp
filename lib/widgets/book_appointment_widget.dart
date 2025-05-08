@@ -200,10 +200,25 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         selectedTime!.minute,
       );
 
+      if (appointmentDateTime.isBefore(DateTime.now())) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No puedes reservar una cita en el pasado.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
       // Validar si ya existe una cita en la misma fecha y hora
       final existing = await FirebaseFirestore.instance
           .collection('appointments')
-          .where('dateTime', isEqualTo: appointmentDateTime)
+          .where('dateTime', isEqualTo: appointmentDateTime.toIso8601String())
           .get();
       if (existing.docs.isNotEmpty) {
         if (mounted) {

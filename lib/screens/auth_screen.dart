@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dynamic_background/dynamic_background.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -55,6 +56,7 @@ class _AuthScreenState extends State<AuthScreen>
       parent: _animationController,
       curve: Curves.easeInOut,
     ));
+    _checkAdminAutoLogin();
   }
 
   @override
@@ -409,6 +411,23 @@ class _AuthScreenState extends State<AuthScreen>
           content: Text("Error al iniciar sesión con Google: \\${e.toString()}"),
         ),
       );
+    }
+  }
+
+  Future<void> _checkAdminAutoLogin() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    final userId = prefs.getString('userId');
+    if (isLoggedIn && userId != null) {
+      // Verificar si el usuario es admin
+      final adminDoc = await FirebaseFirestore.instance.collection('admins').doc(userId).get();
+      if (adminDoc.exists) {
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => AdminPanel()),
+          );
+        }
+      }
     }
   }
 

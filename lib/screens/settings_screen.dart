@@ -8,6 +8,7 @@ import 'package:guerrero_barber_app/services/supabase_service.dart';
 import 'package:guerrero_barber_app/main.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:guerrero_barber_app/screens/theme_transition_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -34,9 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    
-    // Determinar el tema actual
-    _isDarkMode = themeModeNotifier.value == ThemeMode.dark;
+    _loadThemePreference();
   }
 
   Future<void> _loadUserData() async {
@@ -54,6 +53,20 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         });
       }
     }
+  }
+
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final theme = prefs.getString('theme_mode') ?? 'light';
+    setState(() {
+      _isDarkMode = theme == 'dark';
+    });
+    themeModeNotifier.value = _isDarkMode ? ThemeMode.dark : ThemeMode.light;
+  }
+
+  Future<void> _saveThemePreference(bool isDark) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('theme_mode', isDark ? 'dark' : 'light');
   }
 
   Future<void> _showImageSourceDialog() async {
@@ -87,7 +100,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -239,6 +252,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
         ),
       ),
     );
+    await _saveThemePreference(isDark);
   }
 
   @override
@@ -378,7 +392,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
             activeColor: Colors.amber,
             activeTrackColor: Colors.amber.withAlpha(50),
             inactiveThumbColor: Colors.grey[300],
-            inactiveTrackColor: Colors.grey[400],
+            inactiveTrackColor: Colors.grey[300],
           ),
         ],
       ),
@@ -524,7 +538,7 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
               ),
               child: Icon(
                 Icons.camera_alt,
-                color: isDark ? colorScheme.onPrimary : Colors.white,
+                color: isDark ? colorScheme.onPrimary : colorScheme.onPrimary,
                 size: 22,
               ),
             ),
@@ -743,7 +757,7 @@ class _ImageSourceOption extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.onSurface,
                 size: 28,
               ),
               const SizedBox(width: 20),

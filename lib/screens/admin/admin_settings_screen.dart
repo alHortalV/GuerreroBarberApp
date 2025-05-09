@@ -8,6 +8,7 @@ import 'package:guerrero_barber_app/services/supabase_service.dart';
 import 'package:guerrero_barber_app/main.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:guerrero_barber_app/screens/theme_transition_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -22,7 +23,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> with SingleTi
   bool _isLoading = false;
   final user = FirebaseAuth.instance.currentUser;
   late AnimationController _animationController;
-  
+  bool _isDarkMode = false;
+
   @override
   void initState() {
     super.initState();
@@ -31,8 +33,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> with SingleTi
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    
-    // Determinar el tema actual
+    _loadThemePreference();
   }
 
   Future<void> _loadAdminData() async {
@@ -49,6 +50,20 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> with SingleTi
         });
       }
     }
+  }
+
+  Future<void> _loadThemePreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    final theme = prefs.getString('theme_mode') ?? 'light';
+    setState(() {
+      _isDarkMode = theme == 'dark';
+    });
+    themeModeNotifier.value = _isDarkMode ? ThemeMode.dark : ThemeMode.light;
+  }
+
+  Future<void> _saveThemePreference(bool isDark) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('theme_mode', isDark ? 'dark' : 'light');
   }
 
   Future<void> _showImageSourceDialog() async {
@@ -82,7 +97,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> with SingleTi
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -320,14 +335,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> with SingleTi
           toDark: isDark,
           onFinish: () {
             Navigator.of(context).pop();
-            setState(() {
-            });
+            setState(() {});
             themeModeNotifier.value = mode;
             forceThemeRebuild();
           },
         ),
       ),
     );
+     await _saveThemePreference(isDark);
   }
 
   @override
@@ -570,7 +585,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> with SingleTi
                     ),
                     child: Icon(
                       Icons.camera_alt,
-                      color: isDark ? Theme.of(context).colorScheme.onPrimary : Colors.white,
+                      color: isDark ? Colors.white : Colors.white,
                       size: 22,
                     ),
                   ),
@@ -863,7 +878,7 @@ class _ImageSourceOption extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                color: Theme.of(context).colorScheme.primary,
+                color: Theme.of(context).colorScheme.onSurface,
                 size: 28,
               ),
               const SizedBox(width: 20),

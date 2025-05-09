@@ -13,7 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final ValueNotifier<ThemeMode> themeModeNotifier =
-    ValueNotifier(ThemeMode.system);
+    ValueNotifier(ThemeMode.light);
 final GlobalKey<_MyAppState> myAppKey = GlobalKey<_MyAppState>();
 
 Future<void> initializeApp() async {

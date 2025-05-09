@@ -153,7 +153,7 @@ class _CalendarAdminScreenState extends State<CalendarAdminScreen> {
           child: ListTile(
             leading: Icon(
               Icons.event, 
-              color: Theme.of(context).colorScheme.primary
+              color: Theme.of(context).colorScheme.onSurface
             ),
             title: Text(
               appointment.service,

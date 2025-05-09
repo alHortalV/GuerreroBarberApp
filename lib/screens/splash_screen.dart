@@ -4,6 +4,7 @@ import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:guerrero_barber_app/services/connectivity_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -94,6 +95,14 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkAuthState() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final permissionsShown = prefs.getBool('permissions_screen_shown') ?? false;
+      if (!permissionsShown) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => const PermissionsScreen()),
+        );
+        return;
+      }
       final user = FirebaseAuth.instance.currentUser;
       if (!mounted) return;
 
@@ -102,11 +111,21 @@ class _SplashScreenState extends State<SplashScreen>
         return;
       }
 
+      // Primero buscar en la colección 'admins'
+      final adminDoc = await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(user.uid)
+          .get();
+      if (adminDoc.exists) {
+        _navigateToAdmin();
+        return;
+      }
+
+      // Si no es admin, buscar en 'users'
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
-      
       if (!mounted) return;
 
       if (userDoc.exists) {

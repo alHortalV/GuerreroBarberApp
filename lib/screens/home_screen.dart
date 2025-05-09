@@ -218,10 +218,7 @@ class HomeScreenState extends State<HomeScreen> {
                 AppointmentsList(username: _username),
                 BookAppointmentWidget(key: _bookAppointmentKey),
                 const CalendarScreen(),
-                if (userRole == 'admin')
-                  const PendingAppointmentsScreen()
-                else
-                  const AppointmentStatusScreen(),
+                const AppointmentStatusScreen(),
               ],
             ),
           ),

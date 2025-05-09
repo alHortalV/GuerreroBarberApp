@@ -37,7 +37,7 @@ class AppointmentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isPending
             ? Colors.orange.withValues(alpha: 0.3)
-            : Theme.of(context).colorScheme.primary.withValues(alpha: 1.2),
+            : Colors.green.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -65,8 +65,8 @@ class AppointmentCard extends StatelessWidget {
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: isToday
-                          ? Theme.of(context).colorScheme.primary
-                          : Colors.grey[200],
+                          ? Colors.grey[200]
+                          : Theme.of(context).colorScheme.primary,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -77,7 +77,7 @@ class AppointmentCard extends StatelessWidget {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 22,
-                            color: isToday ? Colors.white : Colors.black87,
+                            color: isToday ? Colors.black87 : Colors.white,
                           ),
                         ),
                         Text(
@@ -85,7 +85,7 @@ class AppointmentCard extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
-                            color: isToday ? Colors.white : Colors.black54,
+                            color: isToday ? Colors.black54 : Colors.white,
                           ),
                         ),
                       ],
@@ -138,31 +138,31 @@ class AppointmentCard extends StatelessWidget {
                         // Día y hora
                         Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.access_time_rounded,
                               size: 16,
-                              color: Colors.grey,
+                              color: Colors.grey[500],
                             ),
                             const SizedBox(width: 4),
                             Text(
                               formattedTime,
-                              style: const TextStyle(
-                                color: Colors.grey,
+                              style: TextStyle(
+                                color: Colors.grey[500],
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             const SizedBox(width: 16),
-                            const Icon(
+                            Icon(
                               Icons.calendar_today_rounded,
                               size: 16,
-                              color: Colors.grey,
+                              color: Colors.grey[500],
                             ),
                             const SizedBox(width: 4),
                             Expanded(
                               child: Text(
                                 formattedDate,
-                                style: const TextStyle(
-                                  color: Colors.grey,
+                                style: TextStyle(
+                                  color: Colors.grey[500],
                                   fontWeight: FontWeight.w500,
                                 ),
                                 maxLines: 1,
@@ -210,8 +210,8 @@ class AppointmentCard extends StatelessWidget {
                                         ? Colors.white
                                         : Colors.white.withOpacity(0.5))
                                     : (isConfirmed
-                                        ? Colors.grey[400]
-                                        : Colors.grey[700]),
+                                        ? Colors.white
+                                        : Colors.white.withOpacity(0.5)),
                               ),
                               label: Text(
                                 'Recordar',
@@ -219,11 +219,11 @@ class AppointmentCard extends StatelessWidget {
                                   color: Theme.of(context).brightness ==
                                           Brightness.dark
                                       ? (isConfirmed
-                                          ? Colors.white.withOpacity(0.5)
-                                          : Colors.white)
+                                          ? Colors.white
+                                          : Colors.white.withOpacity(0.5))
                                       : (isConfirmed
-                                          ? Colors.grey[400]
-                                          : Colors.grey[700]),
+                                          ? Colors.white
+                                          : Colors.white.withOpacity(0.5)),
                                 ),
                               ),
                               style: TextButton.styleFrom(

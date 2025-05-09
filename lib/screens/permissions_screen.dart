@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PermissionsScreen extends StatefulWidget {
   const PermissionsScreen({super.key});
@@ -24,6 +25,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
         final notificationStatus = await Permission.notification.request();
         final alarmStatus = await Permission.scheduleExactAlarm.request();
         if (notificationStatus.isGranted && alarmStatus.isGranted) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setBool('permissions_screen_shown', true);
           if (mounted) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (_) => const SplashScreen()),
@@ -37,6 +40,8 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
         }
       } else {
         // En iOS o web, simplemente avanza
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('permissions_screen_shown', true);
         if (mounted) {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const SplashScreen()),

@@ -173,8 +173,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             labelText: 'Nombre',
                             border: OutlineInputBorder(),
                           ),
-                          validator: (value) =>
-                              value?.isEmpty ?? true ? 'Campo requerido' : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -183,8 +181,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             labelText: 'Email',
                             border: OutlineInputBorder(),
                           ),
-                          validator: (value) =>
-                              value?.isEmpty ?? true ? 'Campo requerido' : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -193,8 +189,6 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             labelText: 'Teléfono',
                             border: OutlineInputBorder(),
                           ),
-                          validator: (value) =>
-                              value?.isEmpty ?? true ? 'Campo requerido' : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(

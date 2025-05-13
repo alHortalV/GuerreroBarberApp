@@ -35,7 +35,6 @@ class HomeScreenState extends State<HomeScreen> {
     // Configurar el tema de la barra de estado
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      
     ));
   }
 
@@ -84,19 +83,6 @@ class HomeScreenState extends State<HomeScreen> {
         setState(() {
           userRole = userDoc.data()?['role'] ?? 'cliente';
         });
-      }
-    }
-  }
-
-  Future<void> _registerDeviceToken() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      final deviceToken = await DeviceTokenService().getDeviceToken();
-      if (deviceToken != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .update({'deviceToken': deviceToken});
       }
     }
   }
@@ -180,23 +166,6 @@ class HomeScreenState extends State<HomeScreen> {
                               : null,
                         ),
                       ),
-                      if (userRole == 'admin')
-                        Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            padding: const EdgeInsets.all(2),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Icon(
-                              Icons.verified,
-                              color: Colors.blue,
-                              size: 12,
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ),
@@ -278,16 +247,12 @@ class HomeScreenState extends State<HomeScreen> {
                     ),
                     BottomNavigationBarItem(
                       icon: Icon(
-                        userRole == 'admin'
-                            ? Icons.admin_panel_settings_outlined
-                            : Icons.pending_actions_outlined,
+                        Icons.pending_actions_outlined,
                       ),
                       activeIcon: Icon(
-                        userRole == 'admin'
-                            ? Icons.admin_panel_settings
-                            : Icons.pending_actions,
+                        Icons.pending_actions,
                       ),
-                      label: userRole == 'admin' ? 'Admin' : 'Estado',
+                      label: 'Estado',
                     ),
                   ],
                 ),

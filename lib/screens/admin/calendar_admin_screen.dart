@@ -27,22 +27,25 @@ class _CalendarAdminScreenState extends State<CalendarAdminScreen> {
   }
 
   void _loadAppointments() async {
-    final selectedDateStart = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
-    final endOfDay = selectedDateStart.add(const Duration(days: 1));
+  final selectedDateStart = DateTime(_selectedDay.year, _selectedDay.month, _selectedDay.day);
+  final endOfDay = selectedDateStart.add(const Duration(days: 1));
 
-    final snapshot = await FirestoreService.firestore
-        .collection('appointments')
-        .where('dateTime', isGreaterThanOrEqualTo: selectedDateStart.toIso8601String())
-        .where('dateTime', isLessThan: endOfDay.toIso8601String())
-        .orderBy('dateTime')
-        .get();
+  final snapshot = await FirestoreService.firestore
+      .collection('appointments')
+      .where('status', isEqualTo: 'approved')
+      .where('dateTime', isLessThan: endOfDay.toIso8601String())
+      .where('dateTime', isGreaterThanOrEqualTo: selectedDateStart.toIso8601String())
+      
+      .orderBy('dateTime')
+      .get();
 
-    setState(() {
-      _appointments = snapshot.docs
-          .map((doc) => Appointment.fromMap(doc.data()))
-          .toList();
-    });
-  }
+  setState(() {
+    _appointments = snapshot.docs
+        .map((doc) => Appointment.fromMap(doc.data()))
+        .toList();
+  });
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -156,10 +159,12 @@ class _CalendarAdminScreenState extends State<CalendarAdminScreen> {
               .limit(1)
               .get(),
           builder: (context, userSnapshot) {
-            String displayName = appointment.userEmail;
+            String displayName = "";
+            String phone = "";
             if (userSnapshot.hasData && userSnapshot.data != null && userSnapshot.data!.docs.isNotEmpty) {
               final userData = userSnapshot.data!.docs.first.data() as Map<String, dynamic>;
               displayName = userData['username'] ?? appointment.userEmail;
+              phone = userData['phone'] ?? "";
             }
             if(!mounted){
               return const CircularProgressIndicator();
@@ -176,7 +181,7 @@ class _CalendarAdminScreenState extends State<CalendarAdminScreen> {
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 subtitle: Text(
-                  'Hora: ${DateFormat('HH:mm').format(appointment.dateTime)}\nCliente: $displayName',
+                  'Hora: ${DateFormat('HH:mm').format(appointment.dateTime)}\nCliente: $displayName\nTeléfono: $phone',
                 ),
               ),
             );

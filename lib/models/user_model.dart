@@ -3,7 +3,7 @@ class UserModel {
   final String username;
   final String email;
   final String phone;
-  final String? photoUrl;
+  final String? profileImageUrl;
   final String? notes;
   final bool isAdmin;
 
@@ -12,7 +12,7 @@ class UserModel {
     required this.username,
     required this.email,
     required this.phone,
-    this.photoUrl,
+    this.profileImageUrl,
     this.notes,
     this.isAdmin = false,
   });
@@ -23,7 +23,7 @@ class UserModel {
       username: map['username'] ?? map['email'] ?? '',
       email: map['email'] ?? '',
       phone: map['phone'] ?? '',
-      photoUrl: map['profileImageUrl'],
+      profileImageUrl: map['profileImageUrl'],
       notes: map['notes'],
       isAdmin: map['role'] == 'admin' ? true : false,
     );
@@ -34,7 +34,7 @@ class UserModel {
       'username': username,
       'email': email,
       'phone': phone,
-      'photoUrl': photoUrl,
+      'profileImageUrl': profileImageUrl,
       'notes': notes,
       'isAdmin': isAdmin, 
     };
@@ -44,7 +44,7 @@ class UserModel {
     String? username,
     String? email,
     String? phone,
-    String? photoUrl,
+    String? profileImageUrl,
     String? notes,
     bool? isAdmin,
   }) {
@@ -53,7 +53,7 @@ class UserModel {
       username: username ?? this.username,
       email: email ?? this.email,
       phone: phone ?? this.phone,
-      photoUrl: photoUrl ?? this.photoUrl,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       notes: notes ?? this.notes,
       isAdmin: isAdmin ?? this.isAdmin,
     );

@@ -124,25 +124,32 @@ class PendingAppointmentsScreen extends StatelessWidget {
 
       // Enviar notificación al cliente
       final dateTime = DateTime.parse(appointmentData['dateTime']);
-      final userToken = appointmentData['userToken'];
-      
+      final userEmail = appointmentData['userEmail'];
+      final userQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: userEmail)
+          .limit(1)
+          .get();
+      if (userQuery.docs.isEmpty) {
+        print('No se encontró usuario con email $userEmail');
+        return;
+      }
+      final userId = userQuery.docs.first.id;
+      final userToken = await DeviceTokenService().getUserLastDeviceToken(userId);
       if (userToken != null) {
         final notificationsService = NotificationsService();
         final String formattedDate = "${dateTime.day}/${dateTime.month}/${dateTime.year}";
         final String formattedTime = "${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
-        
         const title = "¡Cita Confirmada!";
         final body = "Tu cita para el $formattedDate a las $formattedTime ha sido confirmada";
-
         await notificationsService.sendNotification(
           token: userToken,
           title: title,
           body: body,
         );
       } else {
-        print('No se encontró token para el usuario ${appointmentData['userEmail']}');
+        print('No se encontró token para el usuario $userEmail');
       }
-
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -193,7 +200,8 @@ class PendingAppointmentsScreen extends StatelessWidget {
           .doc(appointmentId)
           .update({'status': 'no_show'});
       // Notificar al usuario
-      final userToken = appointmentData['userToken'];
+      final userId = userDoc.id;
+      final userToken = await DeviceTokenService().getUserLastDeviceToken(userId);
       if (userToken != null) {
         final notificationsService = NotificationsService();
         await notificationsService.sendNotification(

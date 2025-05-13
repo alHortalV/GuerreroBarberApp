@@ -72,7 +72,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
   }
 
   Future<String?> _uploadImage() async {
-    if (_selectedImage == null) return _user?.photoUrl;
+    if (_selectedImage == null) return _user?.profileImageUrl;
     try {
       return await SupabaseService.uploadProfileImage(
         widget.userId,
@@ -99,7 +99,7 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
         email: _emailController.text,
         phone: _phoneController.text,
         notes: _notesController.text,
-        photoUrl: photoUrl ?? _user!.photoUrl,
+        profileImageUrl: photoUrl ?? _user!.profileImageUrl,
       );
 
       await FirebaseFirestore.instance
@@ -154,10 +154,10 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
                             radius: 50,
                             backgroundImage: _selectedImage != null
                                 ? FileImage(_selectedImage!)
-                                : _user?.photoUrl != null
-                                    ? NetworkImage(_user!.photoUrl!)
+                                : _user?.profileImageUrl != null
+                                    ? NetworkImage(_user!.profileImageUrl!)
                                     : null,
-                            child: _user?.photoUrl == null && _selectedImage == null
+                            child: _user?.profileImageUrl == null && _selectedImage == null
                                 ? const Icon(Icons.person, size: 50)
                                 : null,
                           ),

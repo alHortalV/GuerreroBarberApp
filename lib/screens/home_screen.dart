@@ -30,7 +30,7 @@ class HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkUserRole();
     _setupUserStream();
-    _registerDeviceToken();
+    DeviceTokenService().registerDeviceToken();
 
     // Configurar el tema de la barra de estado
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(

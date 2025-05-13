@@ -253,4 +253,60 @@ class DeviceTokenService {
       return null;
     }
   }
+
+  // Eliminar un token de todos los administradores
+  Future<void> removeTokenFromAllAdmins(String token) async {
+    final adminDocs = await _firestore.collection('admins').get();
+    for (var adminDoc in adminDocs.docs) {
+      await _firestore.collection('admins').doc(adminDoc.id).update({
+        'deviceTokens': FieldValue.arrayRemove([token]),
+      });
+      final data = adminDoc.data();
+      if (data['lastDeviceToken'] == token) {
+        await _firestore.collection('admins').doc(adminDoc.id).update({
+          'lastDeviceToken': null,
+          'lastTokenUpdate': null,
+        });
+      }
+    }
+  }
+
+  // Eliminar un token de todos los usuarios
+  Future<void> removeTokenFromAllUsers(String token) async {
+    final userDocs = await _firestore.collection('users').get();
+    for (var userDoc in userDocs.docs) {
+      // Eliminar de la subcolección tokens
+      final tokensCol = await _firestore.collection('users').doc(userDoc.id).collection('tokens').where('token', isEqualTo: token).get();
+      for (var tokenDoc in tokensCol.docs) {
+        await tokenDoc.reference.delete();
+      }
+      // Limpiar lastDeviceToken si coincide
+      final data = userDoc.data();
+      if (data['lastDeviceToken'] == token) {
+        await _firestore.collection('users').doc(userDoc.id).update({
+          'lastDeviceToken': null,
+          'lastTokenUpdate': null,
+        });
+      }
+    }
+  }
+
+  // Obtener solo el último token de cada administrador
+  Future<List<String>> getAllAdminsLastDeviceTokens() async {
+    try {
+      final adminDocs = await _firestore.collection('admins').get();
+      List<String> tokens = [];
+      for (var adminDoc in adminDocs.docs) {
+        final adminData = adminDoc.data();
+        if (adminData.containsKey('lastDeviceToken') && adminData['lastDeviceToken'] != null && (adminData['lastDeviceToken'] as String).isNotEmpty) {
+          tokens.add(adminData['lastDeviceToken'] as String);
+        }
+      }
+      print('Últimos tokens de administradores encontrados: \\${tokens.length}');
+      return tokens;
+    } catch (e) {
+      print('Error al obtener los últimos tokens de administradores: $e');
+      return [];
+    }
+  }
 } 

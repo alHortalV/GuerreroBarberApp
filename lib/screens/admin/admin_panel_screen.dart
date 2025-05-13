@@ -5,6 +5,7 @@ import 'package:guerrero_barber_app/screens/admin/admin.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/screens/admin/user_details_screen.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
+import 'package:guerrero_barber_app/services/device_token_service.dart';
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});
@@ -29,6 +30,7 @@ class _AdminPanelState extends State<AdminPanel>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _loadProfileImage();
+    DeviceTokenService().registerDeviceToken();
   }
 
   @override
@@ -987,7 +989,18 @@ class _TodayAppointmentsListState extends State<_TodayAppointmentsList> {
           .collection('appointments')
           .doc(appointmentId)
           .update({'status': 'approved'});
-      final userToken = appointmentData['userToken'];
+      final userEmail = appointmentData['userEmail'];
+      final userQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: userEmail)
+          .limit(1)
+          .get();
+      if (userQuery.docs.isEmpty) {
+        print('No se encontró usuario con email $userEmail');
+        return;
+      }
+      final userId = userQuery.docs.first.id;
+      final userToken = await DeviceTokenService().getUserLastDeviceToken(userId);
       if (userToken != null && userToken != '') {
         final notificationsService = NotificationsService();
         await notificationsService.sendNotification(
@@ -1044,7 +1057,8 @@ class _TodayAppointmentsListState extends State<_TodayAppointmentsList> {
           .collection('appointments')
           .doc(appointmentId)
           .update({'status': 'no_show'});
-      final userToken = appointmentData['userToken'];
+      final userId = userDoc.id;
+      final userToken = await DeviceTokenService().getUserLastDeviceToken(userId);
       if (userToken != null && userToken != '') {
         final notificationsService = NotificationsService();
         await notificationsService.sendNotification(

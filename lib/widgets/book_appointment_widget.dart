@@ -421,7 +421,7 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
                     'IMPORTANTE:\nSi llegas entre 15 y 30 minutos tarde, tendrás que abonar el doble del importe de la siguiente cita por las molestias ocasionadas.\n\nSi no te presentas a 4 citas, serás vetado y no podrás reservar durante 4 meses.',
                     style: TextStyle(
                         fontSize: 15,
-                        color: Colors.black87,
+                        color: Colors.redAccent,
                         fontWeight: FontWeight.w500),
                     textAlign: TextAlign.center,
                   ),

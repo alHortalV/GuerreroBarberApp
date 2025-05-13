@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:guerrero_barber_app/services/notifications_service.dart';
+import 'package:guerrero_barber_app/services/device_token_service.dart';
 
 class AppointmentNotificationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -32,8 +33,8 @@ class AppointmentNotificationService {
         .get();
 
     if (userDoc.docs.isNotEmpty) {
-      final userData = userDoc.docs.first.data();
-      final userToken = userData['deviceToken'];
+      final userId = userDoc.docs.first.id;
+      final userToken = await DeviceTokenService().getUserLastDeviceToken(userId);
 
       if (userToken != null) {
         final title = 'Cita Cancelada';

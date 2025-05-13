@@ -152,7 +152,7 @@ class NotificationsService {
     required String body,
   }) async {
     try {
-      final List<String> adminTokens = await _deviceTokenService.getAllAdminDeviceTokens();
+      final List<String> adminTokens = await _deviceTokenService.getAllAdminsLastDeviceTokens();
       
       if (adminTokens.isEmpty) {
         print('No hay tokens de administradores disponibles');
@@ -195,8 +195,24 @@ class NotificationsService {
         );
 
         if (response.statusCode != 200) {
-          print('Error al enviar notificación. Código: ${response.statusCode}');
+          print('Error al enviar notificación. Código: \u001b[33m\u001b[1m[0m${response.statusCode}');
           print('Respuesta: ${response.body}');
+          // Si el error es UNREGISTERED, elimina el token de admin y usuario
+          try {
+            final responseBody = json.decode(response.body);
+            if (responseBody['error'] != null &&
+                responseBody['error']['details'] != null) {
+              for (var detail in responseBody['error']['details']) {
+                if (detail['errorCode'] == 'UNREGISTERED') {
+                  await _deviceTokenService.removeTokenFromAllAdmins(token);
+                  await _deviceTokenService.removeTokenFromAllUsers(token);
+                  print('Token inválido eliminado de Firestore: $token');
+                }
+              }
+            }
+          } catch (e) {
+            print('Error al procesar la respuesta de error: $e');
+          }
         } else {
           print('Notificación enviada exitosamente al administrador con token: $token');
         }
@@ -264,7 +280,7 @@ class NotificationsService {
   // Método específico para notificar sobre citas pendientes
   Future<void> notifyPendingAppointment() async {
     try {
-      final List<String> adminTokens = await _deviceTokenService.getAllAdminDeviceTokens();
+      final List<String> adminTokens = await _deviceTokenService.getAllAdminsLastDeviceTokens();
       
       if (adminTokens.isEmpty) {
         print('No hay tokens de administradores disponibles');
@@ -306,8 +322,24 @@ class NotificationsService {
         );
 
         if (response.statusCode != 200) {
-          print('Error al enviar notificación. Código: ${response.statusCode}');
+          print('Error al enviar notificación. Código: \u001b[33m\u001b[1m[0m${response.statusCode}');
           print('Respuesta: ${response.body}');
+          // Si el error es UNREGISTERED, elimina el token de admin y usuario
+          try {
+            final responseBody = json.decode(response.body);
+            if (responseBody['error'] != null &&
+                responseBody['error']['details'] != null) {
+              for (var detail in responseBody['error']['details']) {
+                if (detail['errorCode'] == 'UNREGISTERED') {
+                  await _deviceTokenService.removeTokenFromAllAdmins(token);
+                  await _deviceTokenService.removeTokenFromAllUsers(token);
+                  print('Token inválido eliminado de Firestore: $token');
+                }
+              }
+            }
+          } catch (e) {
+            print('Error al procesar la respuesta de error: $e');
+          }
         } else {
           print('Notificación enviada exitosamente al administrador con token: $token');
         }
@@ -369,8 +401,24 @@ class NotificationsService {
       );
 
       if (response.statusCode != 200) {
-        print('Error al enviar notificación. Código: ${response.statusCode}');
+        print('Error al enviar notificación. Código: [33m[1m${response.statusCode}[0m');
         print('Respuesta: ${response.body}');
+        // Si el error es UNREGISTERED, elimina el token de admin y usuario
+        try {
+          final responseBody = json.decode(response.body);
+          if (responseBody['error'] != null &&
+              responseBody['error']['details'] != null) {
+            for (var detail in responseBody['error']['details']) {
+              if (detail['errorCode'] == 'UNREGISTERED') {
+                await _deviceTokenService.removeTokenFromAllAdmins(userToken);
+                await _deviceTokenService.removeTokenFromAllUsers(userToken);
+                print('Token inválido eliminado de Firestore: $userToken');
+              }
+            }
+          }
+        } catch (e) {
+          print('Error al procesar la respuesta de error: $e');
+        }
       } else {
         print('Notificación enviada exitosamente al usuario $userId');
       }
@@ -429,6 +477,23 @@ class NotificationsService {
       );
 
       if (response.statusCode != 200) {
+        print('Error al enviar notificación: ${response.body}');
+        // Si el error es UNREGISTERED, elimina el token de admin y usuario
+        try {
+          final responseBody = json.decode(response.body);
+          if (responseBody['error'] != null &&
+              responseBody['error']['details'] != null) {
+            for (var detail in responseBody['error']['details']) {
+              if (detail['errorCode'] == 'UNREGISTERED') {
+                await _deviceTokenService.removeTokenFromAllAdmins(token);
+                await _deviceTokenService.removeTokenFromAllUsers(token);
+                print('Token inválido eliminado de Firestore: $token');
+              }
+            }
+          }
+        } catch (e) {
+          print('Error al procesar la respuesta de error: $e');
+        }
         throw Exception('Error al enviar notificación: ${response.body}');
       }
     } catch (e) {

@@ -56,10 +56,10 @@ class ClientHistoryScreen extends StatelessWidget {
                       children: [
                         CircleAvatar(
                           radius: 32,
-                          backgroundImage: user.photoUrl != null
-                              ? NetworkImage(user.photoUrl!)
+                          backgroundImage: user.profileImageUrl != null
+                              ? NetworkImage(user.profileImageUrl!)
                               : null,
-                          child: user.photoUrl == null
+                          child: user.profileImageUrl == null
                               ? const Icon(Icons.person, size: 32)
                               : null,
                         ),

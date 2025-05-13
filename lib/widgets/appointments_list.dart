@@ -247,19 +247,21 @@ class AppointmentsList extends StatelessWidget {
                                   .collection("appointments")
                                   .doc(data['id'])
                                   .delete();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Cita eliminada correctamente'),
-                                  behavior: SnackBarBehavior.floating,
-                                ),
-                              );
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Cita eliminada correctamente'),
+                                    behavior: SnackBarBehavior.floating,
+                                  ),
+                                );
+                              }
                             },
                             child: AppointmentCard(
                               dateTime: dateTime,
                               formattedDate: formattedDate,
                               formattedTime: formattedTime,
                               service: data["service"],
-                              status: status,
+                              status: status == 'no_show' ? 'No Asistido' : status,
                               onDetails: () {
                                 showDialog(
                                   context: context,
@@ -306,9 +308,15 @@ class AppointmentsList extends StatelessWidget {
                                           _buildDetailRow(
                                             context,
                                             'Estado:',
-                                            status == 'pending' ? 'Pendiente' : 'Confirmada',
-                                            status == 'pending' ? Icons.pending : Icons.check_circle,
-                                            color: status == 'pending' ? Colors.orange : Colors.green,
+                                            status == 'pending'
+                                              ? 'Pendiente'
+                                              : status == 'approved'
+                                                ? 'Confirmada'
+                                                : status == 'no_show'
+                                                  ? 'No Asistido'
+                                                  : status,
+                                            status == 'pending' ? Icons.pending : status == 'approved' ? Icons.check_circle : status == 'no_show' ? Icons.block : Icons.info,
+                                            color: status == 'pending' ? Colors.orange : status == 'approved' ? Colors.green : status == 'no_show' ? Colors.red : null,
                                           ),
                                           if (data["notes"] != null && data["notes"].toString().isNotEmpty) ...[
                                             const SizedBox(height: 12),

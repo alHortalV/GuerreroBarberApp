@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:guerrero_barber_app/theme/theme.dart';
-import 'package:guerrero_barber_app/widgets/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:guerrero_barber_app/services/services.dart';
 
@@ -101,7 +100,7 @@ class PendingAppointmentsScreen extends StatelessWidget {
                             Icons.cancel,
                             color: Theme.of(context).colorScheme.error,
                           ),
-                          onPressed: () => _rejectAppointment(context, appointment.id, data),
+                          onPressed: () => _markNoShow(context, appointment.id, data),
                         ),
                       ],
                     ),
@@ -162,22 +161,58 @@ class PendingAppointmentsScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _rejectAppointment(BuildContext context, String appointmentId, Map<String, dynamic> appointmentData) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => CancelAppointmentDialog(
-        appointmentId: appointmentId,
-        appointmentData: appointmentData,
-      ),
-    );
-
-    if (result == true && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cita rechazada correctamente'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+  Future<void> _markNoShow(BuildContext context, String appointmentId, Map<String, dynamic> appointmentData) async {
+    try {
+      final userEmail = appointmentData['userEmail'];
+      final userQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: userEmail)
+          .limit(1)
+          .get();
+      if (userQuery.docs.isEmpty) return;
+      final userDoc = userQuery.docs.first;
+      final userRef = userDoc.reference;
+      final userData = userDoc.data();
+      int noShowCount = userData['noShowCount'] ?? 0;
+      noShowCount++;
+      DateTime? blockUntil;
+      String notificationBody = '';
+      if (noShowCount >= 4) {
+        blockUntil = DateTime.now().add(const Duration(days: 120));
+        notificationBody = 'Has faltado a 4 citas y no podrás reservar durante 4 meses.';
+      } else {
+        final restantes = 4 - noShowCount;
+        notificationBody = 'Has faltado a una cita. Si faltas $restantes vez/veces más, no podrás reservar durante 4 meses.';
+      }
+      await userRef.update({
+        'noShowCount': noShowCount,
+        if (blockUntil != null) 'blockUntil': blockUntil.toIso8601String(),
+      });
+      await FirebaseFirestore.instance
+          .collection('appointments')
+          .doc(appointmentId)
+          .update({'status': 'no_show'});
+      // Notificar al usuario
+      final userToken = appointmentData['userToken'];
+      if (userToken != null) {
+        final notificationsService = NotificationsService();
+        await notificationsService.sendNotification(
+          token: userToken,
+          title: 'Falta a la cita',
+          body: notificationBody,
+        );
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falta registrada y usuario notificado.')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al registrar la falta: $e')),
+        );
+      }
     }
   }
 } 

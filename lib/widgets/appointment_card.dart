@@ -27,7 +27,6 @@ class AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isPending = !isConfirmed;
     final bool isToday = dateTime.day == DateTime.now().day &&
         dateTime.month == DateTime.now().month &&
         dateTime.year == DateTime.now().year;
@@ -35,13 +34,17 @@ class AppointmentCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isPending
-            ? Colors.orange.withValues(alpha: 0.3)
-            : Colors.green.withValues(alpha: 0.3),
+        color: status == 'pending'
+            ? Colors.orange.withOpacity(0.08)
+            : status == 'approved'
+                ? Colors.green.withOpacity(0.08)
+                : status == 'no_show'
+                    ? Colors.red.withOpacity(0.08)
+                    : Colors.grey.withOpacity(0.08),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -116,19 +119,36 @@ class AppointmentCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: isPending
+                                color: status == 'pending'
                                     ? Colors.amber.withOpacity(0.2)
-                                    : Colors.green.withOpacity(0.2),
+                                    : status == 'approved'
+                                        ? Colors.green.withOpacity(0.2)
+                                        : status == 'no_show'
+                                            ? Colors.red.withOpacity(0.2)
+                                            : Colors.grey.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(
-                                isPending ? "Pendiente" : "Confirmada",
+                                status == 'pending'
+                                    ? 'Pendiente'
+                                    : status == 'approved'
+                                        ? 'Confirmada'
+                                        : status == 'no_show'
+                                            ? 'No Asistido'
+                                            : status,
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.bold,
-                                  color: isPending
+                                  color: status == 'pending'
                                       ? Colors.amber[900]
-                                      : Colors.green[800],
+                                      : status == 'approved'
+                                          ? Colors.green[800]
+                                          : status == 'no_show'
+                                              ? (Theme.of(context).brightness ==
+                                                      Brightness.dark
+                                                  ? Colors.white
+                                                  : Colors.red[800])
+                                              : Colors.white,
                                 ),
                               ),
                             ),

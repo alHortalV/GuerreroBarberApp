@@ -67,7 +67,6 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
                 primary: Theme.of(context).colorScheme.secondary),
-            
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
                   foregroundColor: Theme.of(context).colorScheme.secondary),
@@ -187,6 +186,30 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         _isLoading = true;
       });
 
+      // Comprobar si el usuario está vetado
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+        final data = userDoc.data();
+        if (data != null && data['blockUntil'] != null) {
+          final blockUntil = DateTime.tryParse(data['blockUntil']);
+          if (blockUntil != null && blockUntil.isAfter(DateTime.now())) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('No puedes reservar citas hasta el ${DateFormat('dd/MM/yyyy').format(blockUntil)} por acumulación de faltas.'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+            setState(() {
+              _isLoading = false;
+            });
+            return;
+          }
+        }
+      }
+
       final String? deviceToken = await DeviceTokenService().getDeviceToken();
       if (deviceToken == null) {
         print('No se pudo obtener el token del dispositivo');
@@ -297,102 +320,113 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
       children: [
         Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                // Espacio superior
-                const SizedBox(height: 20),
-                TextFormField(
-                  controller: _dateController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: 'Seleccionar Día',
-                    hintText: 'DD/MM/AAAA',
-                    prefixIcon: const Icon(Icons.calendar_today),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  // Espacio superior
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: _dateController,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: 'Seleccionar Día',
+                      hintText: 'DD/MM/AAAA',
+                      prefixIcon: const Icon(Icons.calendar_today),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    onTap: () => _selectDate(context),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, selecciona un día';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _timeController,
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      labelText: 'Seleccionar Hora',
+                      hintText: 'HH:MM',
+                      prefixIcon: const Icon(Icons.access_time),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    onTap: () => _selectTime(context),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, selecciona una hora';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    decoration: InputDecoration(
+                      labelText: 'Corte Deseado',
+                      hintText: 'Indica el tipo de corte',
+                      prefixIcon: const Icon(Icons.content_cut),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        haircut = value;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor, describe el corte deseado';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.secondary,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    onPressed: _isLoading ? null : _submitAppointment,
+                    child: _isLoading
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text(
+                            'Solicitar Cita',
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Horario de atención: Martes a Viernes de 9:30–14:00 y 17:00–21:00. Sábados de 9:30–14:00.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
                     ),
                   ),
-                  onTap: () => _selectDate(context),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, selecciona un día';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _timeController,
-                  readOnly: true,
-                  decoration: InputDecoration(
-                    labelText: 'Seleccionar Hora',
-                    hintText: 'HH:MM',
-                    prefixIcon: const Icon(Icons.access_time),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
+                  const SizedBox(height: 40),
+                  const Text(
+                    'IMPORTANTE:\nSi llegas entre 15 y 30 minutos tarde, tendrás que abonar el doble del importe de la siguiente cita por las molestias ocasionadas.\n\nSi no te presentas a 4 citas, serás vetado y no podrás reservar durante 4 meses.',
+                    style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500),
+                    textAlign: TextAlign.center,
                   ),
-                  onTap: () => _selectTime(context),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, selecciona una hora';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Corte Deseado',
-                    hintText: 'Indica el tipo de corte',
-                    prefixIcon: const Icon(Icons.content_cut),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  onChanged: (value) {
-                    setState(() {
-                      haircut = value;
-                    });
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, describe el corte deseado';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  onPressed: _isLoading ? null : _submitAppointment,
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text(
-                          'Solicitar Cita',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Horario de atención: Martes a Viernes de 9:30–14:00 y 17:00–21:00. Sábados de 9:30–14:00.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 40), // Espacio inferior
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -408,4 +442,4 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
       ],
     );
   }
-} 
+}

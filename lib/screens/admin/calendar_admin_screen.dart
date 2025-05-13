@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:guerrero_barber_app/firebase_firestore.dart';
 import 'package:guerrero_barber_app/models/appointment.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -148,21 +149,38 @@ class _CalendarAdminScreenState extends State<CalendarAdminScreen> {
       itemCount: _appointments.length,
       itemBuilder: (context, index) {
         final appointment = _appointments[index];
-        return Card(
-          elevation: 2,
-          child: ListTile(
-            leading: Icon(
-              Icons.event, 
-              color: Theme.of(context).colorScheme.onSurface
-            ),
-            title: Text(
-              appointment.service,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            subtitle: Text(
-              'Hora: ${DateFormat('HH:mm').format(appointment.dateTime)}\nCliente: ${appointment.username}',
-            ),
-          ),
+        return FutureBuilder<QuerySnapshot>(
+          future: FirebaseFirestore.instance
+              .collection('users')
+              .where('email', isEqualTo: appointment.userEmail)
+              .limit(1)
+              .get(),
+          builder: (context, userSnapshot) {
+            String displayName = appointment.userEmail;
+            if (userSnapshot.hasData && userSnapshot.data != null && userSnapshot.data!.docs.isNotEmpty) {
+              final userData = userSnapshot.data!.docs.first.data() as Map<String, dynamic>;
+              displayName = userData['username'] ?? appointment.userEmail;
+            }
+            if(!mounted){
+              return const CircularProgressIndicator();
+            }
+            return Card(
+              elevation: 2,
+              child: ListTile(
+                leading: Icon(
+                  Icons.event, 
+                  color: Theme.of(context).colorScheme.onSurface
+                ),
+                title: Text(
+                  appointment.service,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  'Hora: ${DateFormat('HH:mm').format(appointment.dateTime)}\nCliente: $displayName',
+                ),
+              ),
+            );
+          },
         );
       },
     );

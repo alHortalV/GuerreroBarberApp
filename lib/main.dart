@@ -47,11 +47,22 @@ Future<void> initializeApp() async {
   }
 }
 
+Future<void> loadThemePreference() async {
+  final prefs = await SharedPreferences.getInstance();
+  final theme = prefs.getString('theme_mode') ?? 'light';
+  if (theme == 'dark') {
+    themeModeNotifier.value = ThemeMode.dark;
+  } else {
+    themeModeNotifier.value = ThemeMode.light;
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await dotenv.load();
     await initializeApp();
+    await loadThemePreference();
     runApp(MyApp(key: myAppKey));
   } catch (e) {
     print('Error al iniciar la aplicación: $e');
@@ -125,7 +136,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    _initializeNotifications();
     _checkPermissionsScreen();
   }
 
@@ -143,15 +153,6 @@ class _MyAppState extends State<MyApp> {
   void _onThemeChanged() {
   }
 
-  Future<void> _initializeNotifications() async {
-    try {
-      if (!_notificationsService.isInitialized) {
-        await _notificationsService.initNotification();
-      }
-    } catch (e) {
-      print('Error al inicializar las notificaciones: $e');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {

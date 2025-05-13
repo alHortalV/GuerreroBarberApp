@@ -1,9 +1,9 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:guerrero_barber_app/models/user_model.dart';
+import 'package:guerrero_barber_app/services/supabase_service.dart';
 
 class UserDetailsScreen extends StatefulWidget {
   final String userId;
@@ -73,15 +73,11 @@ class _UserDetailsScreenState extends State<UserDetailsScreen> {
 
   Future<String?> _uploadImage() async {
     if (_selectedImage == null) return _user?.photoUrl;
-
     try {
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('user_photos')
-          .child('${widget.userId}.jpg');
-      
-      await ref.putFile(_selectedImage!);
-      return await ref.getDownloadURL();
+      return await SupabaseService.uploadProfileImage(
+        widget.userId,
+        _selectedImage!,
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error al subir la imagen: $e')),

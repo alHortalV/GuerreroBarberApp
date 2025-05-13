@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:guerrero_barber_app/screens/admin/admin.dart';
 import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/screens/admin/user_details_screen.dart';
+import 'package:guerrero_barber_app/services/notifications_service.dart';
 
 class AdminPanel extends StatefulWidget {
   const AdminPanel({super.key});
@@ -12,13 +13,14 @@ class AdminPanel extends StatefulWidget {
   _AdminPanelState createState() => _AdminPanelState();
 }
 
-class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateMixin {
+class _AdminPanelState extends State<AdminPanel>
+    with SingleTickerProviderStateMixin {
   String? selectedEmail;
   String? selectedName;
   int? selectedIndex;
   late TabController _tabController;
   String? _profileImageUrl;
-  
+
   // Controlador para el ScrollView principal
   final ScrollController _scrollController = ScrollController();
 
@@ -54,17 +56,17 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-    
+
     return PopScope(
       canPop: false,
       child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface.withOpacity(0.95),
+        backgroundColor:
+            Theme.of(context).colorScheme.surface.withOpacity(0.95),
         body: SafeArea(
           child: Column(
             children: [
               // Header con AppBar personalizado
               _buildCustomAppBar(context),
-              
               // Contenido principal
               Expanded(
                 child: TabBarView(
@@ -72,10 +74,10 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                   children: [
                     // Tab 1: Clientes
                     _buildClientsTab(context, screenSize),
-                    
+
                     // Tab 2: Pendientes
                     const PendingAppointmentsScreen(),
-                    
+
                     // Tab 3: Calendario
                     const CalendarAdminScreen(),
                   ],
@@ -83,6 +85,31 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showTodayAppointmentsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.15),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          width: 400,
+          height: 500,
+          child: _TodayAppointmentsList(),
         ),
       ),
     );
@@ -141,7 +168,8 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                 GestureDetector(
                   onTap: () async {
                     await Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const AdminSettingsScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const AdminSettingsScreen()),
                     );
                     _loadProfileImage();
                   },
@@ -154,9 +182,12 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                     child: CircleAvatar(
                       radius: 22,
                       backgroundColor: Colors.white.withOpacity(0.3),
-                      backgroundImage: _profileImageUrl != null ? NetworkImage(_profileImageUrl!) : null,
+                      backgroundImage: _profileImageUrl != null
+                          ? NetworkImage(_profileImageUrl!)
+                          : null,
                       child: _profileImageUrl == null
-                          ? const Icon(Icons.person, color: Colors.white, size: 28)
+                          ? const Icon(Icons.person,
+                              color: Colors.white, size: 28)
                           : null,
                     ),
                   ),
@@ -261,9 +292,9 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(child: Text('No hay clientes registrados.'));
         }
-        
+
         final clients = snapshot.data!.docs;
-        
+
         return Column(
           children: [
             // Sección del carrusel de clientes
@@ -277,19 +308,21 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
                     sliver: SliverGrid(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 1,
                         mainAxisSpacing: 10,
                         mainAxisExtent: 150,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          final data = clients[index].data() as Map<String, dynamic>;
+                          final data =
+                              clients[index].data() as Map<String, dynamic>;
                           final clientName = data['username'] ?? data['email'];
                           final clientEmail = data['email'];
                           final profileImage = data['profileImageUrl'];
                           final isSelected = selectedIndex == index;
-                          
+
                           return GestureDetector(
                             onTap: () {
                               setState(() {
@@ -302,28 +335,38 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                               duration: const Duration(milliseconds: 300),
                               margin: const EdgeInsets.symmetric(horizontal: 8),
                               decoration: BoxDecoration(
-                                color: isSelected 
-                                  ? Theme.of(context).colorScheme.secondary 
-                                  : Theme.of(context).colorScheme.surface.withOpacity(0.8),
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.secondary
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .surface
+                                        .withOpacity(0.8),
                                 borderRadius: BorderRadius.circular(16),
                                 boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
-                                        blurRadius: 10,
-                                        offset: const Offset(0, 5),
-                                      ),
-                                    ]
-                                  : [],
+                                    ? [
+                                        BoxShadow(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.4),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 5),
+                                        ),
+                                      ]
+                                    : [],
                                 border: isSelected
-                                  ? Border.all(color: Theme.of(context).colorScheme.primary, width: 3)
-                                  : null,
+                                    ? Border.all(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .primary,
+                                        width: 3)
+                                    : null,
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Hero(
-                                    tag: 'client_$index',
+                                    tag: 'client_${clients[index].id}',
                                     child: Container(
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
@@ -333,7 +376,8 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: Colors.black.withOpacity(0.2),
+                                            color:
+                                                Colors.black.withOpacity(0.2),
                                             blurRadius: 8,
                                             offset: const Offset(0, 4),
                                           ),
@@ -341,10 +385,16 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                                       ),
                                       child: CircleAvatar(
                                         radius: 42,
-                                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                                        backgroundImage: profileImage != null ? NetworkImage(profileImage) : null,
+                                        backgroundColor: Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withOpacity(0.3),
+                                        backgroundImage: profileImage != null
+                                            ? NetworkImage(profileImage)
+                                            : null,
                                         child: profileImage == null
-                                            ? const Icon(Icons.person, size: 42, color: Colors.white70)
+                                            ? const Icon(Icons.person,
+                                                size: 42, color: Colors.white70)
                                             : null,
                                       ),
                                     ),
@@ -352,13 +402,18 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                                   const SizedBox(height: 16),
                                   Container(
                                     width: 130,
-                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 4),
                                     child: Text(
                                       clientName,
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
-                                        color: isSelected ? Colors.white :  Theme.of(context).colorScheme.tertiary,
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .tertiary,
                                       ),
                                       textAlign: TextAlign.center,
                                       maxLines: 1,
@@ -377,11 +432,11 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
                 ],
               ),
             ),
-            
+
             // Panel de información del cliente seleccionado
             if (selectedIndex != null)
               _buildSelectedClientPanel(context, clients[selectedIndex!]),
-            
+
             // Botones de acción adaptables
             _buildActionButtons(context, screenSize),
           ],
@@ -390,9 +445,10 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildSelectedClientPanel(BuildContext context, DocumentSnapshot clientDoc) {
+  Widget _buildSelectedClientPanel(
+      BuildContext context, DocumentSnapshot clientDoc) {
     final data = clientDoc.data() as Map<String, dynamic>;
-    
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 20, 16, 0),
       padding: const EdgeInsets.all(16),
@@ -445,19 +501,22 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildClientInfoSection(BuildContext context, Map<String, dynamic> data) {
+  Widget _buildClientInfoSection(
+      BuildContext context, Map<String, dynamic> data) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     if (screenWidth < 360) {
       // Diseño compacto para pantallas pequeñas (vertical)
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow(context, 'Nombre', data['username'] ?? 'No especificado'),
+          _buildInfoRow(
+              context, 'Nombre', data['username'] ?? 'No especificado'),
           const SizedBox(height: 8),
           _buildInfoRow(context, 'Email', data['email']),
           const SizedBox(height: 8),
-          _buildInfoRow(context, 'Teléfono', data['phone'] ?? 'No especificado'),
+          _buildInfoRow(
+              context, 'Teléfono', data['phone'] ?? 'No especificado'),
         ],
       );
     } else {
@@ -469,14 +528,16 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildInfoRow(context, 'Nombre', data['username'] ?? 'No especificado'),
+                _buildInfoRow(
+                    context, 'Nombre', data['username'] ?? 'No especificado'),
                 const SizedBox(width: 16),
                 _buildInfoRow(context, 'Email', data['email']),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          _buildInfoRow(context, 'Teléfono', data['phone'] ?? 'No especificado'),
+          _buildInfoRow(
+              context, 'Teléfono', data['phone'] ?? 'No especificado'),
         ],
       );
     }
@@ -484,7 +545,7 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
 
   Widget _buildActionButtons(BuildContext context, Size screenSize) {
     final isSmallScreen = screenSize.width < 360;
-    
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 20, 16, 16),
       width: screenSize.width - 32,
@@ -493,131 +554,292 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
         borderRadius: BorderRadius.circular(16),
       ),
       child: isSmallScreen
-        ? Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildActionButton(
-                context,
-                icon: Icons.history,
-                label: 'Historial',
-                color: Theme.of(context).colorScheme.primary,
-                onPressed: selectedEmail != null
-                    ? () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ClientHistoryScreen(
-                              clientEmail: selectedEmail!,
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
-              ),
-              _buildActionButton(
-                context,
-                icon: Icons.edit,
-                label: 'Editar',
-                color: Theme.of(context).colorScheme.secondary,
-                onPressed: selectedIndex != null
-                    ? () {
-                        final clients = FirebaseFirestore.instance.collection('users').snapshots().first;
-                        final userId = clients.then((value) => value.docs[selectedIndex!].id);
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => UserDetailsScreen(userId: userId.toString()),
-                          ),
-                        );
-                      }
-                    : null,
-              ),
-              _buildActionButton(
-                context,
-                icon: Icons.event_available,
-                label: 'Citas',
-                color: Theme.of(context).colorScheme.tertiary,
-                onPressed: selectedEmail != null && selectedName != null
-                    ? () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ClientConfirmedAppointmentsScreen(
-                              clientEmail: selectedEmail!,
-                              clientName: selectedName!,
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
-              ),
-            ],
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildHistoryButton(context),
+                _buildEditButton(context),
+                _buildAppointmentsButton(context),
+                const SizedBox(height: 8),
+                _buildTodayAppointmentsButton(context),
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildHistoryButton(context, isExpanded: true),
+                    _buildEditButton(context, isExpanded: true),
+                    _buildAppointmentsButton(context, isExpanded: true),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _buildTodayAppointmentsButton(context),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildHistoryButton(BuildContext context, {bool isExpanded = false}) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final widget = ElevatedButton(
+      onPressed: selectedEmail != null
+          ? () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ClientHistoryScreen(
+                    clientEmail: selectedEmail!,
+                  ),
+                ),
+              );
+            }
+          : null,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor:
+            Theme.of(context).colorScheme.primary.withOpacity(0.4),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        elevation: 3,
+      ),
+      child: isSmallScreen
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.history, color: Colors.white),
+                const SizedBox(width: 6),
+                const Text(
+                  'Historial',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.history, color: Colors.white),
+                const SizedBox(height: 6),
+                const Text(
+                  'Historial',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+    );
+
+    return isExpanded
+        ? Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+              child: widget,
+            ),
           )
-        : Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildActionButton(
-                context,
-                icon: Icons.history,
-                label: 'Historial',
-                color: Theme.of(context).colorScheme.primary,
-                onPressed: selectedEmail != null
-                    ? () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ClientHistoryScreen(
-                              clientEmail: selectedEmail!,
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
-              ),
-              _buildActionButton(
-                context,
-                icon: Icons.edit,
-                label: 'Editar',
-                color: Theme.of(context).colorScheme.secondary,
-                onPressed: selectedIndex != null
-                    ? () {
-                        // Uso de async-await para obtener correctamente el ID
-                        () async {
-                          final snapshot = await FirebaseFirestore.instance.collection('users').get();
-                          final userId = snapshot.docs[selectedIndex!].id;
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => UserDetailsScreen(userId: userId),
-                            ),
-                          );
-                        }();
-                      }
-                    : null,
-              ),
-              _buildActionButton(
-                context,
-                icon: Icons.event_available,
-                label: 'Citas',
-                color: Theme.of(context).colorScheme.tertiary,
-                onPressed: selectedEmail != null && selectedName != null
-                    ? () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ClientConfirmedAppointmentsScreen(
-                              clientEmail: selectedEmail!,
-                              clientName: selectedName!,
-                            ),
-                          ),
-                        );
-                      }
-                    : null,
-              ),
-            ],
+        : Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: SizedBox(
+              width: double.infinity,
+              child: widget,
+            ),
+          );
+  }
+
+  Widget _buildEditButton(BuildContext context, {bool isExpanded = false}) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final widget = ElevatedButton(
+      onPressed: selectedIndex != null
+          ? () {
+              // Uso de función anónima async para obtener correctamente el ID
+              () async {
+                final snapshot =
+                    await FirebaseFirestore.instance.collection('users').get();
+                final userId = snapshot.docs[selectedIndex!].id;
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => UserDetailsScreen(userId: userId),
+                  ),
+                );
+              }();
+            }
+          : null,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.secondary,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor:
+            Theme.of(context).colorScheme.secondary.withOpacity(0.4),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        elevation: 3,
+      ),
+      child: isSmallScreen
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.edit, color: Colors.white),
+                const SizedBox(width: 6),
+                const Text(
+                  'Editar',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.edit, color: Colors.white),
+                const SizedBox(height: 6),
+                const Text(
+                  'Editar',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+    );
+
+    return isExpanded
+        ? Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+              child: widget,
+            ),
+          )
+        : Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: SizedBox(
+              width: double.infinity,
+              child: widget,
+            ),
+          );
+  }
+
+  Widget _buildAppointmentsButton(BuildContext context,
+      {bool isExpanded = false}) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 360;
+    final widget = ElevatedButton(
+      onPressed: selectedEmail != null && selectedName != null
+          ? () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ClientConfirmedAppointmentsScreen(
+                    clientEmail: selectedEmail!,
+                    clientName: selectedName!,
+                  ),
+                ),
+              );
+            }
+          : null,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Theme.of(context).colorScheme.tertiary,
+        foregroundColor: Colors.white,
+        disabledBackgroundColor:
+            Theme.of(context).colorScheme.tertiary.withOpacity(0.4),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        elevation: 3,
+      ),
+      child: isSmallScreen
+          ? Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.event_available, color: Colors.white),
+                const SizedBox(width: 6),
+                const Text(
+                  'Citas',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.event_available, color: Colors.white),
+                const SizedBox(height: 6),
+                const Text(
+                  'Citas',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+    );
+
+    return isExpanded
+        ? Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+              child: widget,
+            ),
+          )
+        : Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: SizedBox(
+              width: double.infinity,
+              child: widget,
+            ),
+          );
+  }
+
+  Widget _buildTodayAppointmentsButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.today),
+        label: const Text('Citas para hoy'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
+        ),
+        onPressed: () => _showTodayAppointmentsDialog(context),
+      ),
     );
   }
 
   Widget _buildInfoRow(BuildContext context, String label, String value) {
     final screenWidth = MediaQuery.of(context).size.width;
     final containerWidth = screenWidth < 360 ? double.infinity : 150.0;
-    
-    return Container(
+
+    return SizedBox(
       width: containerWidth,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -645,85 +867,204 @@ class _AdminPanelState extends State<AdminPanel> with SingleTickerProviderStateM
       ),
     );
   }
+}
 
-  Widget _buildActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback? onPressed,
-  }) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isSmallScreen = screenWidth < 360;
-    
-    return isSmallScreen
-        ? Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: color,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: color.withOpacity(0.4),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 3,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(icon, color: Colors.white),
-                    const SizedBox(width: 6),
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+class _TodayAppointmentsList extends StatefulWidget {
+  @override
+  State<_TodayAppointmentsList> createState() => _TodayAppointmentsListState();
+}
+
+class _TodayAppointmentsListState extends State<_TodayAppointmentsList> {
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = startOfDay.add(const Duration(days: 2));
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Citas para hoy',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('appointments')
+                  .where('status', isEqualTo: 'approved')
+                  .where('dateTime',
+                      isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+                  .where('dateTime', isLessThan: endOfDay.toIso8601String())
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text('No hay citas para hoy.'));
+                }
+                final appointments = snapshot.data!.docs;
+                return ListView.builder(
+                  itemCount: appointments.length,
+                  itemBuilder: (context, index) {
+                    final data =
+                        appointments[index].data() as Map<String, dynamic>;
+                    final appointmentId = appointments[index].id;
+                    final dateTime = DateTime.parse(data['dateTime']);
+                    final userEmail = data['userEmail'];
+                    final status = data['status'] ?? '';
+                    return FutureBuilder<QuerySnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('users')
+                          .where('email', isEqualTo: userEmail)
+                          .limit(1)
+                          .get(),
+                      builder: (context, userSnapshot) {
+                        String displayName = "";
+                        if (userSnapshot.hasData &&
+                            userSnapshot.data != null &&
+                            userSnapshot.data!.docs.isNotEmpty) {
+                          final userData = userSnapshot.data!.docs.first.data()
+                              as Map<String, dynamic>;
+                          displayName = userData['username'] ?? userEmail;
+                        }
+                        if (!mounted) {
+                          return const CircularProgressIndicator();
+                        }
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: ListTile(
+                            title: Text('Cliente: $displayName'),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Servicio: ${data['service']}'),
+                                Text(
+                                    'Hora: ${TimeOfDay.fromDateTime(dateTime).format(context)}'),
+                                Text('Estado: ${status == 'no_show' ? 'No Asistido' : status}'),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.check_circle,
+                                      color: Colors.green),
+                                  onPressed: status == 'approved'
+                                      ? null
+                                      : () => _approveAppointment(
+                                          context, appointmentId, data),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.cancel,
+                                      color: Colors.red),
+                                  onPressed: status == 'no_show'
+                                      ? null
+                                      : () => _markNoShow(
+                                          context, appointmentId, data),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                );
+              },
             ),
-          )
-        : Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-              child: ElevatedButton(
-                onPressed: onPressed,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: color,
-                  foregroundColor: Colors.white,
-                  disabledBackgroundColor: color.withOpacity(0.4),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  elevation: 3,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(icon, color: Colors.white),
-                    const SizedBox(height: 6),
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _approveAppointment(BuildContext context, String appointmentId,
+      Map<String, dynamic> appointmentData) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('appointments')
+          .doc(appointmentId)
+          .update({'status': 'approved'});
+      final userToken = appointmentData['userToken'];
+      if (userToken != null && userToken != '') {
+        final notificationsService = NotificationsService();
+        await notificationsService.sendNotification(
+          token: userToken,
+          title: 'Cita confirmada',
+          body: 'Tu cita ha sido confirmada por el administrador.',
+        );
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cita marcada como asistida.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al aprobar la cita: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _markNoShow(BuildContext context, String appointmentId,
+      Map<String, dynamic> appointmentData) async {
+    try {
+      final userEmail = appointmentData['userEmail'];
+      final userQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('email', isEqualTo: userEmail)
+          .limit(1)
+          .get();
+      if (userQuery.docs.isEmpty) return;
+      final userDoc = userQuery.docs.first;
+      final userRef = userDoc.reference;
+      final userData = userDoc.data();
+      int noShowCount = userData['noShowCount'] ?? 0;
+      noShowCount++;
+      DateTime? blockUntil;
+      String notificationBody = '';
+      if (noShowCount >= 4) {
+        blockUntil = DateTime.now().add(const Duration(days: 120));
+        notificationBody =
+            'Has faltado a 4 citas y no podrás reservar durante 4 meses.';
+      } else {
+        final restantes = 4 - noShowCount;
+        notificationBody =
+            'Has faltado a una cita. Si faltas $restantes vez/veces más, no podrás reservar durante 4 meses.';
+      }
+      await userRef.update({
+        'noShowCount': noShowCount,
+        if (blockUntil != null) 'blockUntil': blockUntil.toIso8601String(),
+      });
+      await FirebaseFirestore.instance
+          .collection('appointments')
+          .doc(appointmentId)
+          .update({'status': 'no_show'});
+      final userToken = appointmentData['userToken'];
+      if (userToken != null && userToken != '') {
+        final notificationsService = NotificationsService();
+        await notificationsService.sendNotification(
+          token: userToken,
+          title: 'Falta a la cita',
+          body: notificationBody,
+        );
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Falta registrada y usuario notificado.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al registrar la falta: $e')),
+        );
+      }
+    }
   }
 }

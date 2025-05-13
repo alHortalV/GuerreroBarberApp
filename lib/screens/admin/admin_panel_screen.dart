@@ -944,20 +944,12 @@ class _TodayAppointmentsListState extends State<_TodayAppointmentsList> {
                                 Text('Servicio: ${data['service']}'),
                                 Text(
                                     'Hora: ${TimeOfDay.fromDateTime(dateTime).format(context)}'),
-                                Text('Estado: ${status == 'no_show' ? 'No Asistido' : status}'),
+                                Text('Estado: ${status == 'approved' ? 'Aprobada' : status}'),
                               ],
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                IconButton(
-                                  icon: const Icon(Icons.check_circle,
-                                      color: Colors.green),
-                                  onPressed: status == 'approved'
-                                      ? null
-                                      : () => _approveAppointment(
-                                          context, appointmentId, data),
-                                ),
                                 IconButton(
                                   icon: const Icon(Icons.cancel,
                                       color: Colors.red),
@@ -980,47 +972,6 @@ class _TodayAppointmentsListState extends State<_TodayAppointmentsList> {
         ],
       ),
     );
-  }
-
-  Future<void> _approveAppointment(BuildContext context, String appointmentId,
-      Map<String, dynamic> appointmentData) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('appointments')
-          .doc(appointmentId)
-          .update({'status': 'approved'});
-      final userEmail = appointmentData['userEmail'];
-      final userQuery = await FirebaseFirestore.instance
-          .collection('users')
-          .where('email', isEqualTo: userEmail)
-          .limit(1)
-          .get();
-      if (userQuery.docs.isEmpty) {
-        print('No se encontró usuario con email $userEmail');
-        return;
-      }
-      final userId = userQuery.docs.first.id;
-      final userToken = await DeviceTokenService().getUserLastDeviceToken(userId);
-      if (userToken != null && userToken != '') {
-        final notificationsService = NotificationsService();
-        await notificationsService.sendNotification(
-          token: userToken,
-          title: 'Cita confirmada',
-          body: 'Tu cita ha sido confirmada por el administrador.',
-        );
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cita marcada como asistida.')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al aprobar la cita: $e')),
-        );
-      }
-    }
   }
 
   Future<void> _markNoShow(BuildContext context, String appointmentId,

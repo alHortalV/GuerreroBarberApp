@@ -198,13 +198,10 @@ class AppointmentCard extends StatelessWidget {
                           children: [
                             TextButton.icon(
                               onPressed: onDetails,
-                              icon: const Icon(Icons.info_outline, size: 18),
+                              icon: const Icon(Icons.info_outline, size: 18, color: Colors.white,),
                               label: const Text('Detalles'),
                               style: TextButton.styleFrom(
-                                foregroundColor: Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white
-                                    : Colors.white,
+                                foregroundColor: Colors.white,
                                 padding:
                                     const EdgeInsets.symmetric(horizontal: 8),
                                 visualDensity: VisualDensity.compact,

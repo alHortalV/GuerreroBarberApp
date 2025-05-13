@@ -148,7 +148,7 @@ class AppointmentsList extends StatelessWidget {
                                     );
                                   }
                                 },
-                                icon: const Icon(Icons.add),
+                                icon: const Icon(Icons.add, color: Colors.white),
                                 label: const Text('Reservar cita'),
                               ),
                             ],
@@ -274,7 +274,7 @@ class AppointmentsList extends StatelessWidget {
                                         children: [
                                           Icon(
                                             Icons.calendar_today,
-                                            color: Theme.of(context).colorScheme.primary,
+                                            color: Theme.of(context).colorScheme.onSurface,
                                           ),
                                           const SizedBox(width: 8),
                                           const Text('Detalles de la Cita'),

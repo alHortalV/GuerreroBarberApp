@@ -238,6 +238,37 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
         return;
       }
 
+      // Validar si el usuario ya tiene una cita en el mismo día
+      final startOfDay = DateTime(
+        selectedDate!.year,
+        selectedDate!.month,
+        selectedDate!.day,
+      );
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final existingAppointmentsForDay = await FirebaseFirestore.instance
+          .collection('appointments')
+          .where('userEmail', isEqualTo: FirebaseAuth.instance.currentUser!.email)
+          .where('dateTime', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+          .where('dateTime', isLessThan: endOfDay.toIso8601String())
+          .where('status', whereIn: ['pending', 'approved']) // Solo citas pendientes o aprobadas
+          .get();
+
+      if (existingAppointmentsForDay.docs.isNotEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ya tienes una cita reservada para este día. Solo se permite una cita por día.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
       // Validar si ya existe una cita en la misma fecha y hora
       final existing = await FirebaseFirestore.instance
           .collection('appointments')

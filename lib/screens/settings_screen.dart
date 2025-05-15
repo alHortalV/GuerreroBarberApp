@@ -693,8 +693,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SingleTickerProvid
                       Navigator.pop(context);
                       await FirebaseAuth.instance.signOut();
                       if (mounted) {
-                        Navigator.of(context).pushReplacement(
+                        Navigator.of(context).pushAndRemoveUntil(
                           MaterialPageRoute(builder: (_) => const AuthScreen()),
+                          (route) => false,
                         );
                       }
                     },

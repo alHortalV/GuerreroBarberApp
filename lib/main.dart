@@ -32,6 +32,9 @@ Future<void> initializeApp() async {
     // Inicializar AndroidAlarmManager
     await AndroidAlarmManager.initialize();
 
+    // Inicializar notificaciones (¡AQUÍ!)
+    await NotificationsService().initNotification();
+
     // Programar tarea periódica
     await AndroidAlarmManager.periodic(
       const Duration(hours: 1),
@@ -134,7 +137,7 @@ class _MyAppState extends State<MyApp> {
   bool _loadingPrefs = true;
 
   @override
-  void initState() {
+  void initState() { 
     super.initState();
     _checkPermissionsScreen();
   }
@@ -148,11 +151,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  // Si necesitas forzar el cambio de clave cuando el tema cambia explícitamente
-  // (esto es más relevante si controlas el cambio de tema manualmente y no solo por ThemeMode.system)
-  void _onThemeChanged() {
-  }
-
+  void _onThemeChanged() {}
 
   @override
   Widget build(BuildContext context) {

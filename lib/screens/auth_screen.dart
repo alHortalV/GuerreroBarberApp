@@ -9,7 +9,6 @@ import 'package:guerrero_barber_app/screens/screen.dart';
 import 'package:guerrero_barber_app/screens/loading_screen.dart';
 import 'package:guerrero_barber_app/services/device_token_service.dart';
 
-
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key, this.initialIsLogin = true});
 
@@ -166,7 +165,7 @@ class _AuthScreenState extends State<AuthScreen>
       if (isLogin) {
         userCredential = await _auth.signInWithEmailAndPassword(
             email: email, password: password);
-            
+
         // Comprobar si las credenciales pertenecen a un administrador
         final adminSnapshot = await FirebaseFirestore.instance
             .collection('admins')
@@ -186,7 +185,7 @@ class _AuthScreenState extends State<AuthScreen>
           if (isAdmin) {
             // Si es administrador, registrar el token del dispositivo
             await DeviceTokenService().registerDeviceToken();
-            
+
             final lastLoginAt = adminData['lastLoginAt'];
             await FirebaseFirestore.instance
                 .collection('admins')
@@ -196,9 +195,9 @@ class _AuthScreenState extends State<AuthScreen>
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(lastLoginAt == null 
-                    ? '¡Bienvenido, $currentUsername!' 
-                    : 'Bienvenido de nuevo, $currentUsername'),
+                  content: Text(lastLoginAt == null
+                      ? '¡Bienvenido, $currentUsername!'
+                      : 'Bienvenido de nuevo, $currentUsername'),
                 ),
               );
               await Navigator.of(context).push(
@@ -213,20 +212,20 @@ class _AuthScreenState extends State<AuthScreen>
               }
             }
           }
-        } 
-        
+        }
+
         if (!isAdmin) {
           // Obtener los datos más recientes del usuario
           final userDoc = await FirebaseFirestore.instance
               .collection('users')
               .doc(userCredential.user!.uid)
               .get();
-          
+
           if (userDoc.exists) {
             final userData = userDoc.data() as Map<String, dynamic>;
             currentUsername = userData['username'] ?? '';
             final lastLoginAt = userData['lastLoginAt'];
-            
+
             // Actualizar lastLoginAt
             await FirebaseFirestore.instance
                 .collection('users')
@@ -239,9 +238,9 @@ class _AuthScreenState extends State<AuthScreen>
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(lastLoginAt == null 
-                    ? '¡Bienvenido, $currentUsername!' 
-                    : 'Bienvenido de nuevo, $currentUsername'),
+                  content: Text(lastLoginAt == null
+                      ? '¡Bienvenido, $currentUsername!'
+                      : 'Bienvenido de nuevo, $currentUsername'),
                 ),
               );
               await Navigator.of(context).push(
@@ -269,7 +268,8 @@ class _AuthScreenState extends State<AuthScreen>
           'phone': '', // Campo para el número de teléfono
           'profileImageUrl': '', // Campo para la foto de perfil
           'createdAt': FieldValue.serverTimestamp(), // Fecha de creación
-          'lastLoginAt': FieldValue.serverTimestamp(), // Última fecha de inicio de sesión
+          'lastLoginAt':
+              FieldValue.serverTimestamp(), // Última fecha de inicio de sesión
           'role': 'cliente', // Rol por defecto
         });
         if (mounted) {
@@ -408,7 +408,8 @@ class _AuthScreenState extends State<AuthScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error al iniciar sesión con Google: \\${e.toString()}"),
+          content:
+              Text("Error al iniciar sesión con Google: \\${e.toString()}"),
         ),
       );
     }
@@ -420,7 +421,10 @@ class _AuthScreenState extends State<AuthScreen>
     final userId = prefs.getString('userId');
     if (isLoggedIn && userId != null) {
       // Verificar si el usuario es admin
-      final adminDoc = await FirebaseFirestore.instance.collection('admins').doc(userId).get();
+      final adminDoc = await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(userId)
+          .get();
       if (adminDoc.exists) {
         if (mounted) {
           Navigator.of(context).pushReplacement(
@@ -476,10 +480,14 @@ class _AuthScreenState extends State<AuthScreen>
                 const SizedBox(height: 40),
                 Container(
                   margin: const EdgeInsets.only(bottom: 20),
-                  child: const Icon(
-                    Icons.content_cut,
-                    size: 80,
-                    color: Color.fromARGB(255, 37, 83, 105),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    height: 80,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.content_cut,
+                      color: Color.fromARGB(255, 37, 83, 105),
+                      size: 80,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

@@ -48,8 +48,8 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _setupConnectivity() {
-    _connectivitySubscription = _connectivityService
-        .onConnectivityChanged.listen((bool hasConnection) {
+    _connectivitySubscription =
+        _connectivityService.onConnectivityChanged.listen((bool hasConnection) {
       if (mounted) {
         setState(() {
           if (hasConnection) {
@@ -96,7 +96,8 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _checkAuthState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final permissionsShown = prefs.getBool('permissions_screen_shown') ?? false;
+      final permissionsShown =
+          prefs.getBool('permissions_screen_shown') ?? false;
       if (!permissionsShown) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const PermissionsScreen()),
@@ -191,10 +192,14 @@ class _SplashScreenState extends State<SplashScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.content_cut,
-                    size: 100,
-                    color: Colors.red,
+                  Image.asset(
+                    'assets/logo.png',
+                    height: 100,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.content_cut,
+                      color: Colors.red,
+                      size: 100,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   const Text(

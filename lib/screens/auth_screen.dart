@@ -505,8 +505,8 @@ class _AuthScreenState extends State<AuthScreen>
                   Container(
                     margin: const EdgeInsets.only(bottom: 20),
                     child: Image.asset(
-                      'assets/logo.png',
-                      height: 80,
+                      'assets/logoOriginal.png',
+                      height: 150,
                       errorBuilder: (context, error, stackTrace) => const Icon(
                         Icons.content_cut,
                         color: Color.fromARGB(255, 37, 83, 105),
@@ -789,11 +789,6 @@ class _AuthScreenState extends State<AuthScreen>
                           const SizedBox(height: 12),
                           ElevatedButton.icon(
                             onPressed: _signInWithGoogle,
-                            label: const Text("Iniciar Sesión con Google",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                )),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                               minimumSize: const Size(double.infinity, 50),
@@ -801,7 +796,25 @@ class _AuthScreenState extends State<AuthScreen>
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            icon: const Icon(Icons.g_mobiledata, color: Colors.white),
+                            icon: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.g_mobiledata_outlined,
+                                color: Colors.red,
+                                size: 24,
+                              ),
+                            ),
+                            label: const Text(
+                              "Iniciar Sesión con Google",
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
                         ],
                         const SizedBox(height: 12),

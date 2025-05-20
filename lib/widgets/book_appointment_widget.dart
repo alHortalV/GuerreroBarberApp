@@ -20,6 +20,89 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
   bool _isLoading = false;
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
+  List<TimeOfDay> availableTimes = [];
+
+  List<DropdownMenuItem<TimeOfDay>> get timeDropdownItems {
+    return availableTimes
+        .map((time) => DropdownMenuItem(
+              value: time,
+              child: Text(time.format(context)),
+            ))
+        .toList();
+  }
+
+  void _updateAvailableTimes() async {
+    availableTimes.clear();
+    if (selectedDate == null) return;
+    // Definir los horarios según el día
+    if (selectedDate!.weekday >= DateTime.tuesday &&
+        selectedDate!.weekday <= DateTime.friday) {
+      availableTimes.addAll([
+        const TimeOfDay(hour: 9, minute: 30),
+        const TimeOfDay(hour: 10, minute: 00),
+        const TimeOfDay(hour: 10, minute: 30),
+        const TimeOfDay(hour: 11, minute: 00),
+        const TimeOfDay(hour: 11, minute: 30),
+        const TimeOfDay(hour: 12, minute: 00),
+        const TimeOfDay(hour: 12, minute: 30),
+        const TimeOfDay(hour: 13, minute: 00),
+        const TimeOfDay(hour: 13, minute: 30),
+        const TimeOfDay(hour: 14, minute: 00),
+        const TimeOfDay(hour: 17, minute: 00),
+        const TimeOfDay(hour: 17, minute: 30),
+        const TimeOfDay(hour: 18, minute: 00),
+        const TimeOfDay(hour: 18, minute: 30),
+        const TimeOfDay(hour: 19, minute: 00),
+        const TimeOfDay(hour: 19, minute: 30),
+        const TimeOfDay(hour: 20, minute: 00),
+        const TimeOfDay(hour: 20, minute: 30)
+      ]);
+    } else if (selectedDate!.weekday == DateTime.saturday) {
+      availableTimes.addAll([
+        const TimeOfDay(hour: 9, minute: 30),
+        const TimeOfDay(hour: 10, minute: 00),
+        const TimeOfDay(hour: 10, minute: 30),
+        const TimeOfDay(hour: 11, minute: 00),
+        const TimeOfDay(hour: 11, minute: 30),
+        const TimeOfDay(hour: 12, minute: 00),
+        const TimeOfDay(hour: 12, minute: 30),
+        const TimeOfDay(hour: 13, minute: 00),
+        const TimeOfDay(hour: 13, minute: 30),
+      ]);
+    }
+    // Filtrar horas ocupadas
+    if (selectedDate != null && availableTimes.isNotEmpty) {
+      final date = selectedDate!;
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+      final appointments = await FirebaseFirestore.instance
+          .collection('appointments')
+          .where('dateTime', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+          .where('dateTime', isLessThan: endOfDay.toIso8601String())
+          .where('status', whereIn: ['pending', 'approved'])
+          .get();
+      final takenTimes = appointments.docs.map((doc) {
+        final dt = DateTime.parse(doc['dateTime']);
+        return TimeOfDay(hour: dt.hour, minute: dt.minute);
+      }).toSet();
+      availableTimes.removeWhere((t) => takenTimes.contains(t));
+    }
+    setState(() {});
+    if (availableTimes.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No hay citas disponibles para este día.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _updateAvailableTimes();
+  }
 
   void clearForm() {
     setState(() {
@@ -85,89 +168,11 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
       setState(() {
         selectedDate = newDate;
         _dateController.text = DateFormat('dd/MM/yyyy').format(selectedDate!);
+        selectedTime = null;
+        _timeController.clear();
       });
-    }
-  }
-
-  Future<void> _selectTime(BuildContext context) async {
-    if (selectedDate == null) return;
-
-    List<TimeOfDay> availableTimes = [];
-    if (selectedDate!.weekday >= DateTime.tuesday &&
-        selectedDate!.weekday <= DateTime.friday) {
-      availableTimes.addAll([
-        const TimeOfDay(hour: 9, minute: 30),
-        const TimeOfDay(hour: 10, minute: 00),
-        const TimeOfDay(hour: 10, minute: 30),
-        const TimeOfDay(hour: 11, minute: 00),
-        const TimeOfDay(hour: 11, minute: 30),
-        const TimeOfDay(hour: 12, minute: 00),
-        const TimeOfDay(hour: 12, minute: 30),
-        const TimeOfDay(hour: 13, minute: 00),
-        const TimeOfDay(hour: 13, minute: 30),
-        const TimeOfDay(hour: 14, minute: 00),
-        const TimeOfDay(hour: 17, minute: 00),
-        const TimeOfDay(hour: 17, minute: 30),
-        const TimeOfDay(hour: 18, minute: 00),
-        const TimeOfDay(hour: 18, minute: 30),
-        const TimeOfDay(hour: 19, minute: 00),
-        const TimeOfDay(hour: 19, minute: 30),
-        const TimeOfDay(hour: 20, minute: 00),
-        const TimeOfDay(hour: 20, minute: 30)
-      ]);
-    } else if (selectedDate!.weekday == DateTime.saturday) {
-      availableTimes.addAll([
-        const TimeOfDay(hour: 9, minute: 30),
-        const TimeOfDay(hour: 10, minute: 00),
-        const TimeOfDay(hour: 10, minute: 30),
-        const TimeOfDay(hour: 11, minute: 00),
-        const TimeOfDay(hour: 11, minute: 30),
-        const TimeOfDay(hour: 12, minute: 00),
-        const TimeOfDay(hour: 12, minute: 30),
-        const TimeOfDay(hour: 13, minute: 00),
-        const TimeOfDay(hour: 13, minute: 30),
-      ]);
-    }
-
-    if (availableTimes.isEmpty) return;
-
-    final initialTime = availableTimes.first;
-
-    final newTime = await showTimePicker(
-      context: context,
-      initialTime: initialTime,
-      builder: (context, child) {
-        return Localizations.override(
-          context: context,
-          locale: const Locale('es', 'ES'),
-          child: Theme(
-            data: Theme.of(context).copyWith(
-              colorScheme: ColorScheme.light(
-                  primary: Theme.of(context).colorScheme.secondary),
-              textButtonTheme: TextButtonThemeData(
-                style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context).colorScheme.secondary),
-              ),
-            ),
-            child: MediaQuery(
-              data:
-                  MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-              child: child!,
-            ),
-          ),
-        );
-      },
-    );
-
-    if (newTime != null && availableTimes.contains(newTime)) {
-      setState(() {
-        selectedTime = newTime;
-        _timeController.text = selectedTime!.format(context);
-      });
-    } else if (newTime != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Hora no disponible para este día.')),
-      );
+      await Future.delayed(const Duration(milliseconds: 100));
+      _updateAvailableTimes();
     }
   }
 
@@ -380,33 +385,138 @@ class BookAppointmentWidgetState extends State<BookAppointmentWidget> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _timeController,
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      labelText: 'Seleccionar Hora',
-                      hintText: 'HH:MM',
-                      prefixIcon: const Icon(Icons.access_time),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(15),
+                  Center(
+                    child: SizedBox(
+                      child: DropdownButtonFormField<TimeOfDay>(
+                        value: selectedTime,
+                        items: availableTimes.isEmpty ? [] : timeDropdownItems,
+                        onChanged: (availableTimes.isEmpty || selectedDate == null)
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  selectedTime = value;
+                                  _timeController.text = value != null ? value.format(context) : '';
+                                });
+                              },
+                        decoration: InputDecoration(
+                          labelText: 'Seleccionar Hora',
+                          prefixIcon: Icon(
+                            Icons.access_time,
+                            color: (availableTimes.isEmpty || selectedDate == null)
+                                ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700] : Colors.grey[400])
+                                : Theme.of(context).colorScheme.secondary,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(
+                              color: (availableTimes.isEmpty || selectedDate == null)
+                                  ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[400]!)
+                                  : Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(
+                              color: (availableTimes.isEmpty || selectedDate == null)
+                                  ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[400]!)
+                                  : Theme.of(context).colorScheme.secondary,
+                              width: 2,
+                            ),
+                          ),
+                          errorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(
+                              color: (availableTimes.isEmpty || selectedDate == null)
+                                  ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[400]!)
+                                  : Theme.of(context).colorScheme.secondary,
+                              width: 2,
+                            ),
+                          ),
+                          focusedErrorBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: BorderSide(
+                              color: (availableTimes.isEmpty || selectedDate == null)
+                                  ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[400]!)
+                                  : Theme.of(context).colorScheme.secondary,
+                              width: 2,
+                            ),
+                          ),
+                          filled: true,
+                          fillColor: (availableTimes.isEmpty || selectedDate == null)
+                              ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[100])
+                              : (Theme.of(context).brightness == Brightness.dark
+                                  ? Colors.white10
+                                  : Colors.grey[50]),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                        ),
+                        dropdownColor: (availableTimes.isEmpty || selectedDate == null)
+                            ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[900] : Colors.grey[100])
+                            : (Theme.of(context).brightness == Brightness.dark
+                                ? Colors.grey[900]
+                                : Colors.white),
+                        icon: Icon(
+                          Icons.arrow_drop_down,
+                          color: (availableTimes.isEmpty || selectedDate == null)
+                              ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700] : Colors.grey[400])
+                              : Theme.of(context).colorScheme.secondary,
+                        ),
+                        style: TextStyle(
+                          color: (availableTimes.isEmpty || selectedDate == null)
+                              ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700] : Colors.grey[400])
+                              : Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                        ),
+                        validator: (value) {
+                          if (availableTimes.isEmpty) {
+                            return 'No hay horas disponibles para este día';
+                          }
+                          if (value == null) {
+                            return 'Por favor, selecciona una hora';
+                          }
+                          return null;
+                        },
+                        selectedItemBuilder: (context) {
+                          return availableTimes.map((time) {
+                            return Text(
+                              time.format(context),
+                              style: TextStyle(
+                                color: (availableTimes.isEmpty || selectedDate == null)
+                                    ? (Theme.of(context).brightness == Brightness.dark ? Colors.grey[700] : Colors.grey[400])
+                                    : Theme.of(context).colorScheme.onSurface,
+                              ),
+                            );
+                          }).toList();
+                        },
+                        menuMaxHeight: 320,
                       ),
                     ),
-                    onTap: () => _selectTime(context),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Por favor, selecciona una hora';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     decoration: InputDecoration(
                       labelText: 'Corte Deseado',
                       hintText: 'Indica el tipo de corte',
-                      prefixIcon: const Icon(Icons.content_cut),
+                      prefixIcon: const Icon(Icons.content_cut, color: null),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.secondary,
+                          width: 2,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.secondary,
+                          width: 2,
+                        ),
                       ),
                     ),
                     onChanged: (value) {

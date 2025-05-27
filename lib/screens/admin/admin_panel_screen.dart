@@ -564,6 +564,8 @@ class _AdminPanelState extends State<AdminPanel>
                 _buildAppointmentsButton(context),
                 const SizedBox(height: 8),
                 _buildTodayAppointmentsButton(context),
+                const SizedBox(height: 8),
+                _buildSendGlobalMessageButton(context),
               ],
             )
           : Column(
@@ -579,9 +581,36 @@ class _AdminPanelState extends State<AdminPanel>
                 ),
                 const SizedBox(height: 8),
                 _buildTodayAppointmentsButton(context),
+                const SizedBox(height: 8),
+                _buildSendGlobalMessageButton(context),
               ],
             ),
     );
+  }
+
+  Widget _buildSendGlobalMessageButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.campaign),
+        label: const Text('Enviar Mensaje Global'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orangeAccent, // A distinct color
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          elevation: 3,
+        ),
+        onPressed: () => _showSendGlobalMessageDialog(context),
+      ),
+    );
+  }
+
+  void _showSendGlobalMessageDialog(BuildContext context) {
+    showDialog(
+        context: context, builder: (context) => const _SendGlobalMessageDialog());
   }
 
   Widget _buildHistoryButton(BuildContext context, {bool isExpanded = false}) {
@@ -1031,5 +1060,181 @@ class _TodayAppointmentsListState extends State<_TodayAppointmentsList> {
         );
       }
     }
+  }
+}
+
+class _SendGlobalMessageDialog extends StatefulWidget {
+  const _SendGlobalMessageDialog();
+
+  @override
+  State<_SendGlobalMessageDialog> createState() =>
+      _SendGlobalMessageDialogState();
+}
+
+class _SendGlobalMessageDialogState extends State<_SendGlobalMessageDialog> {
+  final _messageController = TextEditingController();
+  bool _isSending = false;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _sendMessage() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    setState(() {
+      _isSending = true;
+    });
+
+    final message = _messageController.text.trim();
+
+    try {
+      final usersSnapshot =
+          await FirebaseFirestore.instance.collection('users').get();
+      final notificationsService = NotificationsService();
+      final deviceTokenService = DeviceTokenService();
+      int successCount = 0;
+      int failureCount = 0;
+      List<String> tokensToSend = [];
+
+      for (final userDoc in usersSnapshot.docs) {
+        final userId = userDoc.id;
+        // Assuming DeviceTokenService has a method to get the user's last device token
+        final userToken =
+            await deviceTokenService.getUserLastDeviceToken(userId);
+        if (userToken != null && userToken.isNotEmpty) {
+          tokensToSend.add(userToken);
+        } else {
+          // Optional: Log users for whom no token was found
+          // ignore: avoid_print
+          print('No device token found for user $userId');
+        }
+      }
+
+      if (tokensToSend.isEmpty) {
+        if (mounted) {
+          Navigator.of(context).pop(); // Close the dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('No hay clientes con tokens para notificar.')),
+          );
+        }
+        return;
+      }
+
+      for (final token in tokensToSend) {
+        try {
+          await notificationsService.sendNotification(
+            token: token,
+            title: 'Mensaje de Barbería Guerrero', // Customize title as needed
+            body: message,
+          );
+          successCount++;
+        } catch (e) {
+          // ignore: avoid_print
+          print('Failed to send notification to token $token: $e');
+          failureCount++;
+        }
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Close the dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Mensaje enviado a $successCount clientes. Fallos: $failureCount.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al procesar envío de mensajes: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSending = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Enviar Mensaje Global a Clientes',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _messageController,
+                decoration: const InputDecoration(
+                  labelText: 'Mensaje',
+                  hintText: 'Escribe tu mensaje aquí...',
+                  border: OutlineInputBorder(),
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 4,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'El mensaje no puede estar vacío.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed:
+                        _isSending ? null : () => Navigator.of(context).pop(),
+                    child: const Text('Cancelar'),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    icon: _isSending
+                        ? Container(
+                            width: 20,
+                            height: 20,
+                            padding: const EdgeInsets.all(2.0),
+                            child: const CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.send, size: 18),
+                    label: const Text('Enviar'),
+                    onPressed: _isSending ? null : _sendMessage,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

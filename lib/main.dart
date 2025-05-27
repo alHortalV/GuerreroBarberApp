@@ -18,24 +18,28 @@ final GlobalKey<_MyAppState> myAppKey = GlobalKey<_MyAppState>();
 
 Future<void> initializeApp() async {
   try {
-    // Inicializar Supabase primero
+    print('Inicializando Supabase...');
     await Supabase.initialize(
       url: SupabaseConfig.fromEnv().url,
       anonKey: SupabaseConfig.fromEnv().anonKey,
     );
+    print('Supabase inicializado.');
 
-    // Inicializar Firebase
+    print('Inicializando Firebase...');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
+    print('Firebase inicializado.');
 
-    // Inicializar AndroidAlarmManager
+    print('Inicializando AndroidAlarmManager...');
     await AndroidAlarmManager.initialize();
+    print('AndroidAlarmManager inicializado.');
 
-    // Inicializar notificaciones (¡AQUÍ!)
+    print('Inicializando notificaciones...');
     await NotificationsService().initNotification();
+    print('Notificaciones inicializadas.');
 
-    // Programar tarea periódica
+    print('Programando tarea periódica...');
     await AndroidAlarmManager.periodic(
       const Duration(hours: 1),
       0,
@@ -44,6 +48,7 @@ Future<void> initializeApp() async {
       wakeup: true,
       rescheduleOnReboot: true,
     );
+    print('Tarea periódica programada.');
   } catch (e) {
     print('Error durante la inicialización: $e');
     rethrow;
@@ -63,7 +68,9 @@ Future<void> loadThemePreference() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
+    print('Antes de dotenv.load()');
     await dotenv.load();
+    print('Después de dotenv.load()');
     await initializeApp();
     await loadThemePreference();
     runApp(MyApp(key: myAppKey));

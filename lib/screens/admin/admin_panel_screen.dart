@@ -21,6 +21,7 @@ class _AdminPanelState extends State<AdminPanel>
   int? selectedIndex;
   late TabController _tabController;
   String? _profileImageUrl;
+  bool _profileImageError = false;
 
   // Controlador para el ScrollView principal
   final ScrollController _scrollController = ScrollController();
@@ -43,14 +44,24 @@ class _AdminPanelState extends State<AdminPanel>
   Future<void> _loadProfileImage() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final userDoc = await FirebaseFirestore.instance
-          .collection('admins')
-          .doc(user.uid)
-          .get();
-      if (userDoc.exists) {
-        setState(() {
-          _profileImageUrl = userDoc.data()?['profileImageUrl'];
-        });
+      try {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('admins')
+            .doc(user.uid)
+            .get();
+        if (userDoc.exists) {
+          setState(() {
+            _profileImageUrl = userDoc.data()?['profileImageUrl'];
+            _profileImageError = false;
+          });
+        }
+      } catch (e) {
+        // Si el error es por el PEM, marcar el error
+        if (e.toString().contains('PEM')) {
+          setState(() {
+            _profileImageError = true;
+          });
+        }
       }
     }
   }
@@ -62,6 +73,7 @@ class _AdminPanelState extends State<AdminPanel>
     return PopScope(
       canPop: false,
       child: Scaffold(
+        resizeToAvoidBottomInset: true,
         backgroundColor:
             Theme.of(context).colorScheme.surface.withOpacity(0.95),
         body: SafeArea(
@@ -184,13 +196,16 @@ class _AdminPanelState extends State<AdminPanel>
                     child: CircleAvatar(
                       radius: 22,
                       backgroundColor: Colors.white.withOpacity(0.3),
-                      backgroundImage: _profileImageUrl != null
+                      backgroundImage: _profileImageUrl != null &&
+                          _profileImageUrl!.isNotEmpty &&
+                          !_profileImageError
                           ? NetworkImage(_profileImageUrl!)
                           : null,
-                      child: _profileImageUrl == null
-                          ? const Icon(Icons.person,
-                              color: Colors.white, size: 28)
-                          : null,
+                      child: _profileImageError
+                          ? const Icon(Icons.person, color: Colors.white, size: 28)
+                          : _profileImageUrl == null
+                              ? const Icon(Icons.content_cut, color: Colors.white, size: 28)
+                              : null,
                     ),
                   ),
                 ),
@@ -297,151 +312,153 @@ class _AdminPanelState extends State<AdminPanel>
 
         final clients = snapshot.data!.docs;
 
-        return Column(
-          children: [
-            // Sección del carrusel de clientes
-            Container(
-              margin: const EdgeInsets.fromLTRB(0, 20, 0, 0),
-              height: screenSize.height * 0.25,
-              width: screenSize.width,
-              child: CustomScrollView(
-                scrollDirection: Axis.horizontal,
-                slivers: [
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    sliver: SliverGrid(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 1,
-                        mainAxisSpacing: 10,
-                        mainAxisExtent: 150,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final data =
-                              clients[index].data() as Map<String, dynamic>;
-                          final clientName = data['username'] ?? data['email'];
-                          final clientEmail = data['email'];
-                          final profileImage = data['profileImageUrl'];
-                          final isSelected = selectedIndex == index;
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              // Sección del carrusel de clientes
+              Container(
+                margin: const EdgeInsets.fromLTRB(0, 20, 0, 0),
+                height: screenSize.height * 0.25,
+                width: screenSize.width,
+                child: CustomScrollView(
+                  scrollDirection: Axis.horizontal,
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      sliver: SliverGrid(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 1,
+                          mainAxisSpacing: 10,
+                          mainAxisExtent: 150,
+                        ),
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
+                            final data =
+                                clients[index].data() as Map<String, dynamic>;
+                            final clientName = data['username'] ?? data['email'];
+                            final clientEmail = data['email'];
+                            final profileImage = data['profileImageUrl'];
+                            final isSelected = selectedIndex == index;
 
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedIndex = index;
-                                selectedEmail = clientEmail;
-                                selectedName = clientName;
-                              });
-                            },
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.symmetric(horizontal: 8),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? Theme.of(context).colorScheme.secondary
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .surface
-                                        .withOpacity(0.8),
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  selectedIndex = index;
+                                  selectedEmail = clientEmail;
+                                  selectedName = clientName;
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? Theme.of(context).colorScheme.secondary
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .surface
+                                          .withOpacity(0.8),
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                                .withOpacity(0.4),
+                                            blurRadius: 10,
+                                            offset: const Offset(0, 5),
+                                          ),
+                                        ]
+                                      : [],
+                                  border: isSelected
+                                      ? Border.all(
                                           color: Theme.of(context)
                                               .colorScheme
-                                              .primary
-                                              .withOpacity(0.4),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 5),
-                                        ),
-                                      ]
-                                    : [],
-                                border: isSelected
-                                    ? Border.all(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
-                                        width: 3)
-                                    : null,
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Hero(
-                                    tag: 'client_${clients[index].id}',
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
-                                          color: Colors.white,
-                                          width: 3,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color:
-                                                Colors.black.withOpacity(0.2),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 4),
+                                              .primary,
+                                          width: 3)
+                                      : null,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Hero(
+                                      tag: 'client_${clients[index].id}',
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 3,
                                           ),
-                                        ],
-                                      ),
-                                      child: CircleAvatar(
-                                        radius: 42,
-                                        backgroundColor: Theme.of(context)
-                                            .colorScheme
-                                            .primary
-                                            .withOpacity(0.3),
-                                        backgroundImage: profileImage != null
-                                            ? NetworkImage(profileImage)
-                                            : null,
-                                        child: profileImage == null
-                                            ? const Icon(Icons.person,
-                                                size: 42, color: Colors.white70)
-                                            : null,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color:
+                                                  Colors.black.withOpacity(0.2),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: CircleAvatar(
+                                          radius: 42,
+                                          backgroundColor: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.3),
+                                          backgroundImage: profileImage != null
+                                              ? NetworkImage(profileImage)
+                                              : null,
+                                          child: profileImage == null
+                                              ? const Icon(Icons.person,
+                                                  size: 42, color: Colors.white70)
+                                              : null,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Container(
-                                    width: 130,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 4),
-                                    child: Text(
-                                      clientName,
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        color: isSelected
-                                            ? Colors.white
-                                            : Theme.of(context)
-                                                .colorScheme
-                                                .tertiary,
+                                    const SizedBox(height: 16),
+                                    Container(
+                                      width: 130,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 4),
+                                      child: Text(
+                                        clientName,
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Theme.of(context)
+                                                  .colorScheme
+                                                  .tertiary,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
                                       ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                        childCount: clients.length,
+                            );
+                          },
+                          childCount: clients.length,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
 
-            // Panel de información del cliente seleccionado
-            if (selectedIndex != null)
-              _buildSelectedClientPanel(context, clients[selectedIndex!]),
+              // Panel de información del cliente seleccionado
+              if (selectedIndex != null)
+                _buildSelectedClientPanel(context, clients[selectedIndex!]),
 
-            // Botones de acción adaptables
-            _buildActionButtons(context, screenSize),
-          ],
+              // Botones de acción adaptables
+              _buildActionButtons(context, screenSize),
+            ],
+          ),
         );
       },
     );
@@ -593,9 +610,9 @@ class _AdminPanelState extends State<AdminPanel>
       width: double.infinity,
       child: ElevatedButton.icon(
         icon: const Icon(Icons.campaign),
-        label: const Text('Enviar Mensaje Global'),
+        label: const Text('Enviar mensaje a todos los clientes'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.orangeAccent, // A distinct color
+          backgroundColor: Colors.orangeAccent,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           shape: RoundedRectangleBorder(
@@ -610,7 +627,8 @@ class _AdminPanelState extends State<AdminPanel>
 
   void _showSendGlobalMessageDialog(BuildContext context) {
     showDialog(
-        context: context, builder: (context) => const _SendGlobalMessageDialog());
+        context: context,
+        builder: (context) => const _SendGlobalMessageDialog());
   }
 
   Widget _buildHistoryButton(BuildContext context, {bool isExpanded = false}) {
@@ -851,7 +869,10 @@ class _AdminPanelState extends State<AdminPanel>
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        icon: const Icon(Icons.today),
+        icon: const Icon(
+          Icons.today,
+          color: Colors.white,
+        ),
         label: const Text('Citas para hoy'),
         style: ElevatedButton.styleFrom(
           backgroundColor: Theme.of(context).colorScheme.primary,
@@ -973,7 +994,8 @@ class _TodayAppointmentsListState extends State<_TodayAppointmentsList> {
                                 Text('Servicio: ${data['service']}'),
                                 Text(
                                     'Hora: ${TimeOfDay.fromDateTime(dateTime).format(context)}'),
-                                Text('Estado: ${status == 'approved' ? 'Aprobada' : status}'),
+                                Text(
+                                    'Estado: ${status == 'approved' ? 'Aprobada' : status}'),
                               ],
                             ),
                             trailing: Row(
@@ -1038,7 +1060,8 @@ class _TodayAppointmentsListState extends State<_TodayAppointmentsList> {
           .doc(appointmentId)
           .update({'status': 'no_show'});
       final userId = userDoc.id;
-      final userToken = await DeviceTokenService().getUserLastDeviceToken(userId);
+      final userToken =
+          await DeviceTokenService().getUserLastDeviceToken(userId);
       if (userToken != null && userToken != '') {
         final notificationsService = NotificationsService();
         await notificationsService.sendNotification(
@@ -1169,71 +1192,81 @@ class _SendGlobalMessageDialogState extends State<_SendGlobalMessageDialog> {
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Enviar Mensaje Global a Clientes',
-                style: Theme.of(context).textTheme.titleLarge,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.8,
+            ),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _messageController,
-                decoration: const InputDecoration(
-                  labelText: 'Mensaje',
-                  hintText: 'Escribe tu mensaje aquí...',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 4,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'El mensaje no puede estar vacío.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed:
-                        _isSending ? null : () => Navigator.of(context).pop(),
-                    child: const Text('Cancelar'),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton.icon(
-                    icon: _isSending
-                        ? Container(
-                            width: 20,
-                            height: 20,
-                            padding: const EdgeInsets.all(2.0),
-                            child: const CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.send, size: 18),
-                    label: const Text('Enviar'),
-                    onPressed: _isSending ? null : _sendMessage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary,
-                      foregroundColor: Colors.white,
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Enviar mensaje a todos los clientes',
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                  ),
-                ],
-              )
-            ],
-          ),
-        ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _messageController,
+                      decoration: const InputDecoration(
+                        labelText: 'Mensaje',
+                        hintText: 'Escribe tu mensaje aquí...',
+                        border: OutlineInputBorder(),
+                        alignLabelWithHint: true,
+                      ),
+                      maxLines: 4,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'El mensaje no puede estar vacío.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed:
+                              _isSending ? null : () => Navigator.of(context).pop(),
+                          child: const Text('Cancelar'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          icon: _isSending
+                              ? Container(
+                                  width: 20,
+                                  height: 20,
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: const CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Icon(Icons.send, size: 18, color: Colors.white),
+                          label: const Text('Enviar'),
+                          onPressed: _isSending ? null : _sendMessage,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
